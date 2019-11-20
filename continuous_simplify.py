@@ -158,9 +158,12 @@ class Simulator(object):
         # print(ts.draw_text())
 
         A = collections.defaultdict(list)
+        descendants = []
         for sample in self.alive:
             # All alive individuals map to themselves.
             A[sample].append(Segment(0, self.sequence_length, sample))
+            for i in sample.segments:
+                descendants.append(i.child)
 
         # NOTE this doesn't work at the moment with overlapping generations.
         # Need to figure out why it's different to the other version.
@@ -191,9 +194,11 @@ class Simulator(object):
                     for x in X:
                         ind.add_segment(left, right, x.child)
                 A[ind].append(Segment(left, right, mapped_ind))
-            # If this individual has no children, then we don't need
+            # If this individual has no children, and
+            # is not the child of an alive individual,
+            # then we don't need
             # it anymore and it can be garbage collected.
-            if len(ind.segments) == 0:
+            if len(ind.segments) == 0 and ind not in descendants:
                 garbage.append(ind)
         for ind in garbage:
             self.dead.remove(ind)
@@ -266,7 +271,8 @@ class Simulator(object):
 
 def main():
     seed = 1
-    sim = Simulator(4, 5, death_proba=1.0, seed=seed)
+    # sim = Simulator(4, 5, death_proba=1.0, seed=seed)
+    sim = Simulator(4, 5, death_proba=0.5, seed=seed)
     sim.run(10)
     ts = sim.export()
     print(ts.draw_text())
