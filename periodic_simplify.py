@@ -188,12 +188,10 @@ class Simulator(object):
         new_alive = []
         new_dead = []
         A = collections.defaultdict(list)
-        ind_map = {}
         for sample in self.alive:
             new_ind = Individual(sample.time)
             A[sample].append(Segment(0, self.sequence_length, new_ind))
             new_alive.append(new_ind)
-            ind_map[sample] = new_ind
 
         # We have a really nice property here, in that we don't need to
         # consider the complications of with having samples in
