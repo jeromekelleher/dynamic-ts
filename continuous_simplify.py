@@ -70,6 +70,7 @@ class Individual(object):
         self.time = time
         self.segments = []
         self.index = Individual._next_index
+        self.is_alive = is_alive
         Individual._next_index += 1
 
     def add_segment(self, left, right, child):
@@ -105,14 +106,13 @@ class Simulator(object):
         self.death_proba = death_proba
         self.rng = random.Random(seed)
         self.time = 1
-        self.alive = [Individual(self.time) for _ in range(population_size)]
-        self.dead = sortedcollections.SortedListWithKey(key=lambda x: -x.time)
+        self.population = [Individual(self.time) for _ in range(population_size)]
 
     def kill_individual(self, individual):
         """
         Kill the specified individual.
         """
-        self.dead.add(individual)
+        individual.is_alive = False
 
     def run_generation(self):
         """
@@ -121,9 +121,10 @@ class Simulator(object):
         self.time += 1
         replacements = []
         for j in range(self.population_size):
+            alive = [i for i in self.population if i.is_alive is True]
             if self.rng.random() < self.death_proba:
-                left_parent = self.rng.choice(self.alive)
-                right_parent = self.rng.choice(self.alive)
+                left_parent = self.rng.choice(alive)
+                right_parent = self.rng.choice(alive)
                 # x = self.rng.uniform(0, self.sequence_length)
                 # Using integers here just to make it easier to see what's going on.
                 x = self.rng.randint(1, self.sequence_length - 1)
@@ -133,8 +134,8 @@ class Simulator(object):
                 left_parent.add_segment(0, x, child)
                 right_parent.add_segment(x, self.sequence_length, child)
         for j, ind in replacements:
-            self.kill_individual(self.alive[j])
-            self.alive[j] = ind
+            self.kill_individual(self.population[j])
+            self.population.append(ind)
         # Ultimately we should be passing the fact that only these
         # individuals are new, and should be able to update the simplify
         # data structures in place. For now, let's get it working where
@@ -158,20 +159,19 @@ class Simulator(object):
         # print(ts.draw_text())
 
         A = collections.defaultdict(list)
-        descendants = []
-        for sample in self.alive:
+        for ind in self.population:
             # All alive individuals map to themselves.
-            A[sample].append(Segment(0, self.sequence_length, sample))
-            for i in sample.segments:
-                descendants.append(i.child)
+            if ind.is_alive is True:
+                A[ind].append(Segment(0, self.sequence_length, ind))
 
         # NOTE this doesn't work at the moment with overlapping generations.
         # Need to figure out why it's different to the other version.
 
         # Visit the dead individuals in reverse order of birth time (i.e.,
         # backwards in time from the present)
-        garbage = []
-        for ind in self.dead:
+        for ind in self.population:
+            if ind.is_alive is True and len(ind.segments) == 0:
+                pass
             S = []
             for e in ind.segments:
                 # print("\t", e)
@@ -198,22 +198,21 @@ class Simulator(object):
             # is not the child of an alive individual,
             # then we don't need
             # it anymore and it can be garbage collected.
-            if len(ind.segments) == 0 and ind not in descendants:
-                garbage.append(ind)
-        for ind in garbage:
-            self.dead.remove(ind)
+            # NOTE: us a NULL value to trigger GC
+            if len(ind.segments) == 0 and ind.is_alive is False:
+                ind.is_alive = None 
+        self.population = [i for i in self.population if i.is_alive is not None]
 
 
     def check_state(self):
         # Every segment that we refer to should be in dead or alive.
-        all_individuals = set(self.alive) | set(self.dead)
-        for ind in all_individuals:
+        for ind in self.population:
             segs = sorted(ind.segments, key=lambda x: x.left)
             # print("checking", ind)
             # for seg in segs:
             #     print("\t", seg)
             for seg in segs:
-                assert seg.child in all_individuals
+                assert seg.child in self.population, f"{self.time} {seg.child}"
 
 
     # def export(self):
@@ -247,13 +246,14 @@ class Simulator(object):
         tables = tskit.TableCollection(self.sequence_length)
         # Map the individuals to their indexes to make debug easier.
         # This is a BAD idea under the current index generation scheme!
-        individuals = {ind.index: ind for ind in set(self.alive) | set(self.dead)}
+        #individuals = {ind.index: ind for ind in set(self.alive) | set(self.dead)}
+        individuals = {ind.index: ind for ind in self.population}
         for j in range(max(individuals.keys()) + 1):
             if j in individuals:
                 ind = individuals[j]
                 # print("adding", ind)
                 ret = tables.nodes.add_row(
-                    flags=tskit.NODE_IS_SAMPLE if ind in self.alive else 0,
+                    flags=tskit.NODE_IS_SAMPLE if ind.is_alive is True else 0,
                     time=self.time - ind.time)
                 assert ret == j
             else:
