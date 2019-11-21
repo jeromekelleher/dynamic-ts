@@ -85,7 +85,7 @@ class Individual(object):
             self.segments.append(u)
 
     def __repr__(self):
-        return f"Individual(index={self.index}, time={self.time})"
+        return f"Individual(index={self.index}, time={self.time}, is_alive={self.is_alive})"
 
 class Interval(object):
     def __init__(self, left, right):
@@ -205,6 +205,12 @@ class Simulator(object):
 
 
     def check_state(self):
+        num_alive = 0
+        for i in self.population:
+            if i.is_alive is True:
+                num_alive += 1
+        assert num_alive == self.population_size, \
+            f"Bad number of alive individuals: {self.time} {num_alive} {self.population_size}"
         # Every segment that we refer to should be in dead or alive.
         for ind in self.population:
             segs = sorted(ind.segments, key=lambda x: x.left)
@@ -271,8 +277,8 @@ class Simulator(object):
 
 def main():
     seed = 1
-    # sim = Simulator(4, 5, death_proba=1.0, seed=seed)
-    sim = Simulator(4, 5, death_proba=0.5, seed=seed)
+    sim = Simulator(4, 5, death_proba=1.0, seed=seed)
+    # sim = Simulator(4, 5, death_proba=0.5, seed=seed)
     sim.run(10)
     ts = sim.export()
     print(ts.draw_text())
