@@ -120,17 +120,17 @@ class Simulator(object):
         """
         self.time += 1
         replacements = []
-        for j in range(self.population_size):
-            alive = [i for i in self.population if i.is_alive is True]
+        alive_indexes = [i for i, j in enumerate(self.population) if j.is_alive is True]
+        for j in range(len(alive_indexes)):
             if self.rng.random() < self.death_proba:
-                left_parent = self.rng.choice(alive)
-                right_parent = self.rng.choice(alive)
+                left_parent = self.population[self.rng.choice(alive_indexes)]
+                right_parent = self.population[self.rng.choice(alive_indexes)]
                 # x = self.rng.uniform(0, self.sequence_length)
                 # Using integers here just to make it easier to see what's going on.
                 x = self.rng.randint(1, self.sequence_length - 1)
                 assert 0 < x < self.sequence_length
                 child = Individual(self.time)
-                replacements.append((j, child))
+                replacements.append((alive_indexes[j], child))
                 left_parent.add_segment(0, x, child)
                 right_parent.add_segment(x, self.sequence_length, child)
         for j, ind in replacements:
@@ -169,7 +169,7 @@ class Simulator(object):
 
         # Visit the dead individuals in reverse order of birth time (i.e.,
         # backwards in time from the present)
-        for ind in self.population:
+        for ind in reversed(self.population):
             if ind.is_alive is True and len(ind.segments) == 0:
                 pass
             S = []
@@ -251,34 +251,31 @@ class Simulator(object):
         """
         tables = tskit.TableCollection(self.sequence_length)
         # Map the individuals to their indexes to make debug easier.
-        # This is a BAD idea under the current index generation scheme!
-        #individuals = {ind.index: ind for ind in set(self.alive) | set(self.dead)}
-        individuals = {ind.index: ind for ind in self.population}
-        for j in range(max(individuals.keys()) + 1):
-            if j in individuals:
-                ind = individuals[j]
-                # print("adding", ind)
-                ret = tables.nodes.add_row(
-                    flags=tskit.NODE_IS_SAMPLE if ind.is_alive is True else 0,
-                    time=self.time - ind.time)
-                assert ret == j
-            else:
-                tables.nodes.add_row(0, 0)
+        individuals = {ind.index: j for j, ind in enumerate(self.population)}
+        for j in individuals.keys():
+            idx = individuals[j]
+            ind = self.population[idx]
+            # print("adding", ind)
+            ret = tables.nodes.add_row(
+                flags=tskit.NODE_IS_SAMPLE if ind.is_alive is True else 0,
+                time=self.time - ind.time)
+            assert ret == idx 
             # assert node_map[ind] == ind.index
 
-        for ind in individuals.values():
+        for idx in individuals.values():
+            ind = self.population[idx] 
             for seg in ind.segments:
                 tables.edges.add_row(
                     left=seg.left, right=seg.right,
-                    parent=ind.index, child=seg.child.index)
+                    parent=individuals[ind.index], child=individuals[seg.child.index])
         tables.sort()
         return tables.tree_sequence()
 
 
 def main():
     seed = 1
-    sim = Simulator(4, 5, death_proba=1.0, seed=seed)
-    # sim = Simulator(4, 5, death_proba=0.5, seed=seed)
+    # sim = Simulator(4, 5, death_proba=1.0, seed=seed)
+    sim = Simulator(4, 5, death_proba=0.5, seed=seed)
     sim.run(10)
     ts = sim.export()
     print(ts.draw_text())
