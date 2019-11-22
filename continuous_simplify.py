@@ -195,8 +195,7 @@ class Simulator(object):
                         ind.add_segment(left, right, x.child)
                 A[ind].append(Segment(left, right, mapped_ind))
             # If this individual has no children, and
-            # is not the child of an alive individual,
-            # then we don't need
+            # is not an alive individual, then we don't need
             # it anymore and it can be garbage collected.
             # NOTE: us a NULL value to trigger GC
             if len(ind.segments) == 0 and ind.is_alive is False:
