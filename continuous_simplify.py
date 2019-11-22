@@ -121,7 +121,7 @@ class Simulator(object):
         self.time += 1
         replacements = []
         alive_indexes = [i for i, j in enumerate(self.population) if j.is_alive is True]
-        for j in range(len(alive_indexes)):
+        for j in alive_indexes:
             if self.rng.random() < self.death_proba:
                 left_parent = self.population[self.rng.choice(alive_indexes)]
                 right_parent = self.population[self.rng.choice(alive_indexes)]
@@ -130,7 +130,7 @@ class Simulator(object):
                 x = self.rng.randint(1, self.sequence_length - 1)
                 assert 0 < x < self.sequence_length
                 child = Individual(self.time)
-                replacements.append((alive_indexes[j], child))
+                replacements.append((j, child))
                 left_parent.add_segment(0, x, child)
                 right_parent.add_segment(x, self.sequence_length, child)
         for j, ind in replacements:
