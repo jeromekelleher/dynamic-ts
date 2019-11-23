@@ -143,6 +143,13 @@ class Simulator(object):
         self.check_state()
         self.simplify()
         self.check_state()
+        # NOTE: expensive check
+        try:
+            self.export()
+        except:
+            print(self.time)
+            raise
+
 
     def run(self, num_generations, simplify_interval=1):
         for _ in range(num_generations):
@@ -193,7 +200,11 @@ class Simulator(object):
                     mapped_ind = ind
                     for x in X:
                         ind.add_segment(left, right, x.child)
-                A[ind].append(Segment(left, right, mapped_ind))
+                # If an individual is alive, we have already mapped it
+                # to itself in the setup of A, above, and so we 
+                # prevent an additional mapping here.
+                if ind.is_alive is False or ind.index != mapped_ind.index:
+                    A[ind].append(Segment(left, right, mapped_ind))
             # If this individual has no children, and
             # is not an alive individual, then we don't need
             # it anymore and it can be garbage collected.
