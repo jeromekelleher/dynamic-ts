@@ -258,27 +258,30 @@ class Simulator(object):
     def export(self):
         """
         Exports the edges to a tskit tree sequence.
+
+        NOTE: the individuals themselves are sorted by birth order.
+        The segments w/in an individual are/should be/maybe
+        quite close to sorted.  Thus, a full table sort
+        is probably wasteful and we sort segments w/in
+        individuals instead, which can be trivially
+        parallelized across individuals.
         """
         tables = tskit.TableCollection(self.sequence_length)
         # Map the individuals to their indexes to make debug easier.
-        individuals = {ind.index: j for j, ind in enumerate(self.population)}
-        for j in individuals.keys():
-            idx = individuals[j]
-            ind = self.population[idx]
+        individuals = {ind.index: j for j, ind in enumerate(reversed(self.population))}
+        for ind in reversed(self.population):
             # print("adding", ind)
             ret = tables.nodes.add_row(
                 flags=tskit.NODE_IS_SAMPLE if ind.is_alive is True else 0,
                 time=self.time - ind.time)
-            assert ret == idx 
-            # assert node_map[ind] == ind.index
 
-        for idx in individuals.values():
-            ind = self.population[idx] 
+        for ind in reversed(self.population):
+            ind.segments = sorted(ind.segments, \
+                    key = lambda x: (tables.nodes.time[individuals[x.child.index]], individuals[x.child.index], x.left))
             for seg in ind.segments:
                 tables.edges.add_row(
                     left=seg.left, right=seg.right,
                     parent=individuals[ind.index], child=individuals[seg.child.index])
-        tables.sort()
         return tables.tree_sequence()
 
 
