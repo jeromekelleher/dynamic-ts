@@ -35,6 +35,42 @@ import tskit
 # Not sure if any of this will work, but that's the thinking anyway.
 
 
+def overlapping_segments(segments):
+    """
+    Returns an iterator over the (left, right, X) tuples describing the
+    distinct overlapping segments in the specified set.
+    """
+    S = sorted(segments, key=lambda x: x.left)
+    n = len(S)
+    # Insert a sentinel at the end for convenience.
+    S.append(Segment(sys.float_info.max, 0, None))
+    right = S[0].left
+    X = []
+    j = 0
+    while j < n:
+        # Remove any elements of X with right <= left
+        left = right
+        X = [x for x in X if x.right > left]
+        if len(X) == 0:
+            left = S[j].left
+        while j < n and S[j].left == left:
+            X.append(S[j])
+            j += 1
+        j -= 1
+        right = min(x.right for x in X)
+        right = min(right, S[j + 1].left)
+        yield left, right, X
+        j += 1
+
+    while len(X) > 0:
+        left = right
+        X = [x for x in X if x.right > left]
+        if len(X) > 0:
+            right = min(x.right for x in X)
+            yield left, right, X
+
+
+
 class Segment(object):
     """
     An ancestral segment mapping a given individual to a half-open genomic
@@ -83,6 +119,43 @@ class Individual(object):
             print("\t", child, "->", [(x.left, x.right) for x in intervals])
         print("parents = ", self.parents)
 
+    def add_child_segment(self, child, left, right):
+        """
+        Adds the ancestry for the specified child over the specified interval.
+        """
+        self.children[child].append(Segment(left, right, None))
+
+    def intersecting_ancestry(self):
+        """
+        Returns the list of intervals over which this interval's children intersect
+        with those children's ancestry segments.
+        """
+        S = []
+        for child, intervals in self.children.items():
+            for e in intervals:
+                for x in child.ancestry:
+                    if x.right > e.left and e.right > x.left:
+                        y = Segment(max(x.left, e.left), min(x.right, e.right), child)
+                        S.append(y)
+        return S
+
+    def update_ancestry(self):
+        S = self.intersecting_ancestry()
+        for child in self.children.keys():
+            child.parents.remove(self)
+        self.children.clear()
+        for left, right, X in overlapping_segments(S):
+            if len(X) == 1:
+                mapped_ind = X[0].child
+            else:
+                mapped_ind = self
+                for x in X:
+                    self.add_child_segment(x.child, left, right)
+            # If an individual is alive it always has ancestry over the
+            # full segment, so we don't overwrite this.
+            if not self.is_alive:
+                self.ancestry.append(Segment(left, right, mapped_ind))
+
 
 class Simulator(object):
     """
@@ -96,11 +169,21 @@ class Simulator(object):
         self.time = 1
         self.population = [Individual(self.time) for _ in range(population_size)]
 
-    def kill_individual(self, individual):
-        """
-        Kill the specified individual.
-        """
-        individual.is_alive = False
+    def propagate_upwards(self, ind):
+        # This isn't working.
+        print("PROPAGATE", ind)
+
+        stack = [ind]
+        while len(stack) > 0:
+            ind = stack.pop()
+            # We're visting everything here at the moment, but we don't need to.
+            # We should only have to visit the parents for which we have ancestral
+            # segents, and so the areas of the graph we traverse should be
+            # quickly localised.
+            ind.update_ancestry()
+            for parent in ind.parents:
+                stack.append(parent)
+
 
     def record_inheritance(self, left, right, parent, child):
         """
@@ -108,8 +191,7 @@ class Simulator(object):
         from coordinate left to right.
         """
         child.parents.add(parent)
-        # TODO this should be an Interval, I guess.
-        parent.children[child].append(Segment(left, right, child))
+        parent.add_child_segment(child, left, right)
 
     def run_generation(self):
         """
@@ -125,12 +207,21 @@ class Simulator(object):
                 x = self.rng.randint(1, self.sequence_length - 1)
                 assert 0 < x < self.sequence_length
                 child = Individual(self.time)
+                child.ancestry = [Segment(0, self.sequence_length, child)]
                 replacements.append((j, child))
                 self.record_inheritance(0, x, left_parent, child)
                 self.record_inheritance(x, self.sequence_length, right_parent, child)
+
+        # First propagate the loss of the ancestral material from the newly dead
         for j, ind in replacements:
-            self.kill_individual(self.population[j])
+            dead = self.population[j]
+            dead.is_alive = False
+            self.propagate_upwards(dead)
             self.population[j] = ind
+        # Now propagate the gain in the ancestral material from the children upwards.
+        for _, ind in replacements:
+            self.propagate_upwards(ind)
+
 
         self.check_state()
 
@@ -138,6 +229,7 @@ class Simulator(object):
         #     ind.print_state()
 
     def check_state(self):
+        # Checks: all alive individuals should have (0, L, self) as their A mapping.
         pass
 
     def run(self, num_generations, simplify_interval=1):
@@ -185,7 +277,7 @@ class Simulator(object):
                 for seg in segments:
                     tables.edges.add_row(
                         left=seg.left, right=seg.right,
-                        parent=ind.index, child=seg.child.index)
+                        parent=ind.index, child=child.index)
         # Can't be bothered doing the sorting above to get rid of this,
         # but it's trivial.
         tables.sort()
@@ -196,7 +288,7 @@ def main():
     seed = 1
     sim = Simulator(4, 5, death_proba=1.0, seed=seed)
     # sim = Simulator(400, 5, death_proba=0.5, seed=seed)
-    sim.run(20)
+    sim.run(4)
     ts = sim.export()
     print(ts.draw_text())
     # ts_simplify = ts.simplify()
