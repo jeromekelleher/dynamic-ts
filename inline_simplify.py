@@ -34,6 +34,12 @@ import tskit
 
 # Not sure if any of this will work, but that's the thinking anyway.
 
+def assert_non_overlapping(segments):
+    for j in range(1, len(segments)):
+        x = segments[j - 1]
+        y = segments[j]
+        assert x.right <= y.left
+
 
 def overlapping_segments(segments):
     """
@@ -141,8 +147,8 @@ class Individual(object):
 
     def update_ancestry(self):
         S = self.intersecting_ancestry()
-        for child in self.children.keys():
-            child.parents.remove(self)
+        # for child in self.children.keys():
+        #     child.parents.remove(self)
         self.children.clear()
         for left, right, X in overlapping_segments(S):
             if len(X) == 1:
@@ -170,12 +176,15 @@ class Simulator(object):
         self.population = [Individual(self.time) for _ in range(population_size)]
 
     def propagate_upwards(self, ind):
+        pass
         # This isn't working.
-        print("PROPAGATE", ind)
+        # print("PROPAGATE", ind)
 
         stack = [ind]
         while len(stack) > 0:
             ind = stack.pop()
+            # print("\t", ind)
+            ind.print_state()
             # We're visting everything here at the moment, but we don't need to.
             # We should only have to visit the parents for which we have ancestral
             # segents, and so the areas of the graph we traverse should be
@@ -192,6 +201,7 @@ class Simulator(object):
         """
         child.parents.add(parent)
         parent.add_child_segment(child, left, right)
+        print("record", child, parent, child.parents)
 
     def run_generation(self):
         """
@@ -221,16 +231,27 @@ class Simulator(object):
         # Now propagate the gain in the ancestral material from the children upwards.
         for _, ind in replacements:
             self.propagate_upwards(ind)
-
-
         self.check_state()
 
         # for ind in self.all_reachable():
         #     ind.print_state()
 
     def check_state(self):
-        # Checks: all alive individuals should have (0, L, self) as their A mapping.
-        pass
+        for ind in self.all_reachable():
+            print(ind)
+            if ind.is_alive:
+                assert len(ind.ancestry) == 1
+                x = ind.ancestry[0]
+                assert x.left == 0
+                assert x.right == self.sequence_length
+                assert x.child == ind
+            else:
+                assert_non_overlapping(ind.ancestry)
+            for child, segments in ind.children.items():
+                assert_non_overlapping(segments)
+            for parent in ind.parents:
+                assert ind in parent.children
+
 
     def run(self, num_generations, simplify_interval=1):
         for _ in range(num_generations):
@@ -288,7 +309,7 @@ def main():
     seed = 1
     sim = Simulator(4, 5, death_proba=1.0, seed=seed)
     # sim = Simulator(400, 5, death_proba=0.5, seed=seed)
-    sim.run(4)
+    sim.run(1)
     ts = sim.export()
     print(ts.draw_text())
     # ts_simplify = ts.simplify()
