@@ -126,6 +126,9 @@ class Individual(object):
         print("children = ")
         for child, intervals in self.children.items():
             print("\t", child, "->", [(x.left, x.right) for x in intervals])
+        print("ancestry = ")
+        for i in self.ancestry:
+            print(i)
         print("parents = ", self.parents)
 
     def add_child_segment(self, child, left, right):
