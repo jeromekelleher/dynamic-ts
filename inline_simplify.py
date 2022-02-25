@@ -162,6 +162,7 @@ class Individual(object):
         for left, right, X in overlapping_segments(S):
             if len(X) == 1:
                 mapped_ind = X[0].child
+                self.add_child_segment(mapped_ind, X[0].left, X[0].right)
             else:
                 mapped_ind = self
                 for x in X:
