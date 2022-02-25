@@ -335,7 +335,9 @@ def main():
     seed = 1
     sim = Simulator(4, 5, death_proba=1.0, seed=seed)
     # sim = Simulator(400, 5, death_proba=0.5, seed=seed)
-    sim.run(1)
+    # works for 1 generation...
+    # sim.run(1)
+    sim.run(2)
     ts = sim.export()
     print(ts.draw_text())
     # ts_simplify = ts.simplify()
