@@ -34,6 +34,7 @@ import tskit
 
 # Not sure if any of this will work, but that's the thinking anyway.
 
+
 def assert_non_overlapping(segments):
     for j in range(1, len(segments)):
         x = segments[j - 1]
@@ -76,12 +77,12 @@ def overlapping_segments(segments):
             yield left, right, X
 
 
-
 class Segment(object):
     """
     An ancestral segment mapping a given individual to a half-open genomic
     interval [left, right).
     """
+
     def __init__(self, left, right, child):
         self.left = left
         self.right = right
@@ -95,8 +96,10 @@ class Individual(object):
     """
     Class representing a single individual that was alive at some time.
     """
+
     # This is just for debugging
     _next_index = 0
+
     def __init__(self, time, is_alive=True):
         self.time = time
         # The direct children segments of this individual. For each unique
@@ -167,6 +170,7 @@ class Simulator(object):
     """
     Simple Wright-Fisher simulator using standard periodic simplify.
     """
+
     def __init__(self, population_size, sequence_length, death_proba=1.0, seed=None):
         self.population_size = population_size
         self.sequence_length = sequence_length
@@ -192,7 +196,6 @@ class Simulator(object):
             ind.update_ancestry()
             for parent in ind.parents:
                 stack.append(parent)
-
 
     def record_inheritance(self, left, right, parent, child):
         """
@@ -252,7 +255,6 @@ class Simulator(object):
             for parent in ind.parents:
                 assert ind in parent.children
 
-
     def run(self, num_generations, simplify_interval=1):
         for _ in range(num_generations):
             self.run_generation()
@@ -289,7 +291,8 @@ class Simulator(object):
                 next_ind += 1
             ret = tables.nodes.add_row(
                 flags=tskit.NODE_IS_SAMPLE if ind.is_alive is True else 0,
-                time=self.time - ind.time)
+                time=self.time - ind.time,
+            )
             assert ret == ind.index
             next_ind += 1
 
@@ -297,8 +300,11 @@ class Simulator(object):
             for child, segments in ind.children.items():
                 for seg in segments:
                     tables.edges.add_row(
-                        left=seg.left, right=seg.right,
-                        parent=ind.index, child=child.index)
+                        left=seg.left,
+                        right=seg.right,
+                        parent=ind.index,
+                        child=child.index,
+                    )
         # Can't be bothered doing the sorting above to get rid of this,
         # but it's trivial.
         tables.sort()
