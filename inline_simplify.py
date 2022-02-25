@@ -38,7 +38,7 @@ def assert_non_overlapping(segments):
     for j in range(1, len(segments)):
         x = segments[j - 1]
         y = segments[j]
-        assert x.right <= y.left
+        assert x.right <= y.left, f"{segments[j-1]} {segments[j]}"
 
 
 def overlapping_segments(segments):
