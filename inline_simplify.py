@@ -91,6 +91,9 @@ class Segment(object):
     def __repr__(self):
         return repr((self.left, self.right, self.child))
 
+    def __eq__(self, o):
+        return self.left == o.left and self.right == o.right and self.child == o.child
+
 
 class Individual(object):
     """
@@ -166,7 +169,12 @@ class Individual(object):
             # If an individual is alive it always has ancestry over the
             # full segment, so we don't overwrite this.
             if not self.is_alive:
-                self.ancestry.append(Segment(left, right, mapped_ind))
+                seg = Segment(left, right, mapped_ind)
+
+                # TODO: figure out how/why we are trying
+                # to put redundant segs into self.ancestry.
+                if seg not in self.ancestry:
+                    self.ancestry.append(Segment(left, right, mapped_ind))
 
 
 class Simulator(object):
