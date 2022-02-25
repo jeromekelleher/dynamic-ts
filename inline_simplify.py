@@ -170,11 +170,10 @@ class Individual(object):
             # full segment, so we don't overwrite this.
             if not self.is_alive:
                 seg = Segment(left, right, mapped_ind)
-
                 # TODO: figure out how/why we are trying
                 # to put redundant segs into self.ancestry.
                 if seg not in self.ancestry:
-                    self.ancestry.append(Segment(left, right, mapped_ind))
+                    self.ancestry.append(seg)
 
 
 class Simulator(object):
@@ -194,12 +193,11 @@ class Simulator(object):
         pass
         # This isn't working.
         # print("PROPAGATE", ind)
-
         stack = [ind]
         while len(stack) > 0:
             ind = stack.pop()
             # print("\t", ind)
-            ind.print_state()
+            # ind.print_state()
             # We're visting everything here at the moment, but we don't need to.
             # We should only have to visit the parents for which we have ancestral
             # segents, and so the areas of the graph we traverse should be
@@ -215,7 +213,7 @@ class Simulator(object):
         """
         child.parents.add(parent)
         parent.add_child_segment(child, left, right)
-        print("record", child, parent, child.parents)
+        # print("record", child, parent, child.parents)
 
     def run_generation(self):
         """
@@ -238,12 +236,17 @@ class Simulator(object):
 
         # First propagate the loss of the ancestral material from the newly dead
         for j, ind in replacements:
+            # print("replacement")
+            ind.print_state()
             dead = self.population[j]
             dead.is_alive = False
             self.propagate_upwards(dead)
             self.population[j] = ind
+        # print("done")
         # Now propagate the gain in the ancestral material from the children upwards.
         for _, ind in replacements:
+            print("replacement")
+            ind.print_state()
             self.propagate_upwards(ind)
         self.check_state()
 
@@ -252,7 +255,8 @@ class Simulator(object):
 
     def check_state(self):
         for ind in self.all_reachable():
-            print(ind)
+            print("reachable individiual:")
+            ind.print_state()
             if ind.is_alive:
                 assert len(ind.ancestry) == 1
                 x = ind.ancestry[0]
@@ -264,6 +268,10 @@ class Simulator(object):
             for child, segments in ind.children.items():
                 assert_non_overlapping(segments)
             for parent in ind.parents:
+                if ind not in parent.children:
+                    print("the failing parent is")
+                    parent.print_state()
+                    print("done w/failing parent")
                 assert ind in parent.children
 
     def run(self, num_generations, simplify_interval=1):
