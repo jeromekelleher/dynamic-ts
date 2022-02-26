@@ -162,7 +162,13 @@ class Individual(object):
         for left, right, X in overlapping_segments(S):
             if len(X) == 1:
                 mapped_ind = X[0].child
-                self.add_child_segment(mapped_ind, X[0].left, X[0].right)
+                seg = Segment(X[0].left, X[0].right, mapped_ind)
+                # TODO: figure out how/why we are trying
+                # to put redundant segs into self.ancestry.
+                if seg not in self.ancestry:
+                    self.ancestry.append(seg)
+                if self in mapped_ind.parents:
+                    mapped_ind.parents.remove(self)
             else:
                 mapped_ind = self
                 for x in X:
@@ -336,8 +342,8 @@ def main():
     sim = Simulator(4, 5, death_proba=1.0, seed=seed)
     # sim = Simulator(400, 5, death_proba=0.5, seed=seed)
     # works for 1 generation...
-    # sim.run(1)
-    sim.run(2)
+    sim.run(1)
+    # sim.run(2)
     ts = sim.export()
     print(ts.draw_text())
     # ts_simplify = ts.simplify()
