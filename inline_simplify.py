@@ -161,7 +161,8 @@ class Individual(object):
         #     child.parents.remove(self)
         self.children.clear()
         if not self.is_alive and clear_if_not_alive is True:
-            self.ancestry.clear()
+            print("input:", self.ancestry, self.children)
+            # self.ancestry.clear()
 
         for left, right, X in overlapping_segments(S):
             if len(X) == 1:
@@ -187,7 +188,10 @@ class Individual(object):
                 # we are constantly trying to remap nodes onto self.
                 # NOTE: this is happening during ancestry propagation
                 # for replacement individuals.
-                self.ancestry.append(seg)
+                if clear_if_not_alive and mapped_ind.index != self.index:
+                    self.ancestry.append(seg)
+                elif not clear_if_not_alive:
+                    self.ancestry.append(seg)
                 # if seg not in self.ancestry:
                 #     self.ancestry.append(seg)
                 # else:
@@ -197,6 +201,8 @@ class Individual(object):
                 # lengths and infrequent simplification
                 # if seg.child is not self:
                 #     self.ancestry.append(seg)
+        if not self.is_alive and clear_if_not_alive is True:
+            print("output:", self.index, self.ancestry, "children=", self.children)
 
 
 class Simulator(object):
