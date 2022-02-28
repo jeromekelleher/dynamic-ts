@@ -7,6 +7,7 @@ import collections
 import heapq
 import sys
 
+import numpy as np
 import tskit
 
 # Notes: this is not working yet. The idea is that we should be able to
@@ -201,8 +202,11 @@ class Simulator(object):
         # This isn't working.
         # print("PROPAGATE", ind)
         stack = [ind]
+        last_time = int(np.iinfo(np.uint32).max)
         while len(stack) > 0:
             ind = stack.pop()
+            assert ind.time <= last_time, f"{ind.time} {last_time}"
+            last_time = ind.time
             # print("\t", ind)
             # ind.print_state()
             # We're visting everything here at the moment, but we don't need to.
@@ -211,6 +215,7 @@ class Simulator(object):
             # quickly localised.
             ind.update_ancestry()
             for parent in ind.parents:
+                assert parent.time < ind.time
                 stack.append(parent)
 
     def record_inheritance(self, left, right, parent, child):
