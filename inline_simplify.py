@@ -155,11 +155,14 @@ class Individual(object):
                         S.append(y)
         return S
 
-    def update_ancestry(self):
+    def update_ancestry(self, clear_if_not_alive: bool = False):
         S = self.intersecting_ancestry()
         # for child in self.children.keys():
         #     child.parents.remove(self)
         self.children.clear()
+        if not self.is_alive and clear_if_not_alive is True:
+            self.ancestry.clear()
+
         for left, right, X in overlapping_segments(S):
             if len(X) == 1:
                 mapped_ind = X[0].child
@@ -184,10 +187,11 @@ class Individual(object):
                 # we are constantly trying to remap nodes onto self.
                 # NOTE: this is happening during ancestry propagation
                 # for replacement individuals.
-                if seg not in self.ancestry:
-                    self.ancestry.append(seg)
-                else:
-                    print("redundant")
+                self.ancestry.append(seg)
+                # if seg not in self.ancestry:
+                #     self.ancestry.append(seg)
+                # else:
+                #     print("redundant")
                 # NOTE: something like below
                 # is almost certainly wrong for large genomic
                 # lengths and infrequent simplification
@@ -208,7 +212,7 @@ class Simulator(object):
         self.time = 1
         self.population = [Individual(self.time) for _ in range(population_size)]
 
-    def propagate_upwards(self, ind):
+    def propagate_upwards(self, ind, clear_if_not_alive: bool = False):
         pass
         # This isn't working.
         # print("PROPAGATE", ind)
@@ -224,7 +228,7 @@ class Simulator(object):
             # We should only have to visit the parents for which we have ancestral
             # segents, and so the areas of the graph we traverse should be
             # quickly localised.
-            ind.update_ancestry()
+            ind.update_ancestry(clear_if_not_alive)
             for parent in ind.parents:
                 assert parent.time < ind.time
                 stack.append(parent)
@@ -272,7 +276,7 @@ class Simulator(object):
         for _, ind in replacements:
             # print("replacement")
             # ind.print_state()
-            self.propagate_upwards(ind)
+            self.propagate_upwards(ind, True)
         self.check_state()
 
         # for ind in self.all_reachable():
