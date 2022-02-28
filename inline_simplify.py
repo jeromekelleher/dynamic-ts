@@ -180,6 +180,8 @@ class Individual(object):
                 seg = Segment(left, right, mapped_ind)
                 # TODO: figure out how/why we are trying
                 # to put redundant segs into self.ancestry.
+                # NOTE: what is happening here is that
+                # we are constantly trying to remap nodes onto self.
                 if seg not in self.ancestry:
                     self.ancestry.append(seg)
 
