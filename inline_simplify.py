@@ -165,8 +165,8 @@ class Individual(object):
                 seg = Segment(X[0].left, X[0].right, mapped_ind)
                 # TODO: figure out how/why we are trying
                 # to put redundant segs into self.ancestry.
-                if seg not in self.ancestry:
-                    self.ancestry.append(seg)
+                # if seg not in self.ancestry:
+                #     self.ancestry.append(seg)
                 if self in mapped_ind.parents:
                     mapped_ind.parents.remove(self)
             else:
