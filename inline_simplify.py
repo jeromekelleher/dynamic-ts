@@ -182,8 +182,12 @@ class Individual(object):
                 # to put redundant segs into self.ancestry.
                 # NOTE: what is happening here is that
                 # we are constantly trying to remap nodes onto self.
+                # NOTE: this is happening during ancestry propagation
+                # for replacement individuals.
                 if seg not in self.ancestry:
                     self.ancestry.append(seg)
+                else:
+                    print("redundant")
                 # NOTE: something like below
                 # is almost certainly wrong for large genomic
                 # lengths and infrequent simplification
@@ -254,18 +258,20 @@ class Simulator(object):
                 self.record_inheritance(x, self.sequence_length, right_parent, child)
 
         # First propagate the loss of the ancestral material from the newly dead
+        print("pdead")
         for j, ind in replacements:
             # print("replacement")
-            ind.print_state()
+            # ind.print_state()
             dead = self.population[j]
             dead.is_alive = False
             self.propagate_upwards(dead)
             self.population[j] = ind
         # print("done")
         # Now propagate the gain in the ancestral material from the children upwards.
+        print("prepl")
         for _, ind in replacements:
-            print("replacement")
-            ind.print_state()
+            # print("replacement")
+            # ind.print_state()
             self.propagate_upwards(ind)
         self.check_state()
 
@@ -274,8 +280,8 @@ class Simulator(object):
 
     def check_state(self):
         for ind in self.all_reachable():
-            print("reachable individiual:")
-            ind.print_state()
+            # print("reachable individiual:")
+            # ind.print_state()
             if ind.is_alive:
                 assert len(ind.ancestry) == 1
                 x = ind.ancestry[0]
@@ -352,12 +358,12 @@ class Simulator(object):
 def main():
     seed = 1
     # sim = Simulator(100, 5, death_proba=1.0, seed=seed)
-    sim = Simulator(400, 5, death_proba=1.0, seed=seed)
+    sim = Simulator(10, 5, death_proba=1.0, seed=seed)
     # works for 1 generation...
     sim.run(1)
     # sim.run(2)
     ts = sim.export()
-    print(ts.draw_text())
+    # print(ts.draw_text())
     # ts_simplify = ts.simplify()
     # print(ts_simplify.draw_text())
 
