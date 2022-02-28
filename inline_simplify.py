@@ -182,7 +182,9 @@ class Individual(object):
                 # to put redundant segs into self.ancestry.
                 # NOTE: what is happening here is that
                 # we are constantly trying to remap nodes onto self.
-                if seg not in self.ancestry:
+                # if seg not in self.ancestry:
+                #     self.ancestry.append(seg)
+                if seg.child is not self:
                     self.ancestry.append(seg)
 
 
