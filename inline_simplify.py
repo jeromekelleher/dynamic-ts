@@ -182,10 +182,13 @@ class Individual(object):
                 # to put redundant segs into self.ancestry.
                 # NOTE: what is happening here is that
                 # we are constantly trying to remap nodes onto self.
-                # if seg not in self.ancestry:
-                #     self.ancestry.append(seg)
-                if seg.child is not self:
+                if seg not in self.ancestry:
                     self.ancestry.append(seg)
+                # NOTE: something like below
+                # is almost certainly wrong for large genomic
+                # lengths and infrequent simplification
+                # if seg.child is not self:
+                #     self.ancestry.append(seg)
 
 
 class Simulator(object):
