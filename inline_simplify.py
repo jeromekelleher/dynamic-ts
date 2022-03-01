@@ -209,6 +209,15 @@ class Individual(object):
                 # we are constantly trying to remap nodes onto self.
                 # NOTE: this is happening during ancestry propagation
                 # for replacement individuals.
+                # NOTE: there are multiple complexities here:
+                # 1. Fundamentally, we have to deal with already-filled
+                #    self.ancestry.
+                # 2. To do so, we (probably?) need to be co-iterating
+                #    over the overlaps (X) and self.ancestry,  updating
+                #    the contents of the latter such that:
+                #    a. unary transmissions "upgrade" to coalescences.
+                #    b. changes in [left, right) mapping to the
+                #       same non-self child get updated.
                 if not processing_replacements:
                     # If a segment length has changed,
                     # find it and update it
