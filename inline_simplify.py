@@ -187,7 +187,7 @@ class Individual(object):
                 # we are constantly trying to remap nodes onto self.
                 # NOTE: this is happening during ancestry propagation
                 # for replacement individuals.
-                if not processing_replacements and seg not in self.ancestry:
+                if not processing_replacements:
                     self.ancestry.append(seg)
                 elif mapped_ind.index != self.index:
                     self.ancestry.append(seg)
