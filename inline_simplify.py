@@ -177,7 +177,7 @@ class Individual(object):
                 mapped_ind = self
                 for x in X:
                     self.add_child_segment(x.child, left, right)
-                    assert_non_overlapping(self.children[mapped_ind])
+                assert_non_overlapping(self.children[mapped_ind])
             # If an individual is alive it always has ancestry over the
             # full segment, so we don't overwrite this.
             if not self.is_alive:
@@ -189,9 +189,26 @@ class Individual(object):
                 # NOTE: this is happening during ancestry propagation
                 # for replacement individuals.
                 if not processing_replacements:
-                    self.ancestry.append(seg)
+                    # If a segment length has changed,
+                    # find it and update it
+                    # NOTE: this may be the wrong way to go...
+                    found = False
+                    for i in self.ancestry:
+                        if i.child.index == mapped_ind.index:
+                            if i.left == seg.left:
+                                seg.left = i.left
+                                found = True
+                                break
+                            elif i.right == seg.right:
+                                seg.left = i.left
+                                found = True
+                                break
+                    if not found:
+                        self.ancestry.append(seg)
                 elif mapped_ind.index != self.index:
                     self.ancestry.append(seg)
+                print("pre-assert")
+                self.print_state()
                 assert_non_overlapping(self.ancestry)
                 # if seg not in self.ancestry:
                 #     self.ancestry.append(seg)
@@ -233,7 +250,11 @@ class Simulator(object):
             # We should only have to visit the parents for which we have ancestral
             # segents, and so the areas of the graph we traverse should be
             # quickly localised.
+            print("before")
+            ind.print_state()
             ind.update_ancestry(clear_if_not_alive)
+            print("after")
+            ind.print_state()
             for parent in ind.parents:
                 assert parent.time < ind.time
                 stack.append(parent)
