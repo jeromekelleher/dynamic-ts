@@ -156,7 +156,7 @@ class Individual(object):
         return S
 
     def update_ancestry(self, processing_replacements: bool = False):
-        # FIXME: (??) -- the second time we simplify, 
+        # FIXME: (??) -- the second time we simplify,
         # the existing ancestry is already "full"...
         S = self.intersecting_ancestry()
         # for child in self.children.keys():
@@ -177,6 +177,7 @@ class Individual(object):
                 mapped_ind = self
                 for x in X:
                     self.add_child_segment(x.child, left, right)
+                    assert_non_overlapping(self.children[mapped_ind])
             # If an individual is alive it always has ancestry over the
             # full segment, so we don't overwrite this.
             if not self.is_alive:
@@ -191,6 +192,7 @@ class Individual(object):
                     self.ancestry.append(seg)
                 elif mapped_ind.index != self.index:
                     self.ancestry.append(seg)
+                assert_non_overlapping(self.ancestry)
                 # if seg not in self.ancestry:
                 #     self.ancestry.append(seg)
                 # else:
@@ -367,8 +369,8 @@ def main():
     # sim = Simulator(100, 5, death_proba=1.0, seed=seed)
     sim = Simulator(10, 5, death_proba=1.0, seed=seed)
     # works for 1 generation...
-    sim.run(1)
-    # sim.run(2)
+    # sim.run(1)
+    sim.run(2)
     ts = sim.export()
     # print(ts.draw_text())
     # ts_simplify = ts.simplify()
