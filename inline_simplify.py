@@ -243,6 +243,10 @@ class Individual(object):
                 #     self.ancestry.append(seg)
 
                 found_seg = None
+
+                # TODO: this is not correct.
+                # We need to be looking explicitly for overlaps
+                # here and dealing with them as they come up.
                 while (
                     ancestry_i < len(self.ancestry)
                     and self.ancestry[ancestry_i].left <= seg.left
