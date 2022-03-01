@@ -294,6 +294,13 @@ class Simulator(object):
             # print("replacement")
             # ind.print_state()
             dead = self.population[j]
+            # NOTE: here, we have a few problems, as far as simulating > 1 generation
+            # is concerned:
+            # 1. If the Individual has an ancestral mapping to self on [0, L),
+            #    that mapping is no longer valid.
+            # 2. We have ancestry already in place for  the next "round" of evolution.
+            #    So we are now in a position where we may are not BUILDING ancestry
+            #    de novo, but rather updating ancestry that is already in memory.
             dead.is_alive = False
             self.propagate_upwards(dead)
             self.population[j] = ind
