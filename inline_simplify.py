@@ -141,6 +141,27 @@ class Individual(object):
         """
         self.children[child].append(Segment(left, right, None))
 
+    def remove_sample_mapping(self, sequence_length):
+        """
+        Alive ("sample") individuals (nodes) contain a segment [0, sequence_length), self.
+        When such individuals die, this segment needs to be removed.
+        """
+
+        def not_a_sample_map(seg, sequence_length) -> bool:
+            assert seg.child is not None
+            if seg.child.index != self.index:
+                return True
+            if not (seg.left == 0 and seg.right == sequence_length):
+                return True
+
+        self.ancestry = [
+            i
+            for i in filter(
+                lambda seg: not_a_sample_map(seg, sequence_length),
+                self.ancestry,
+            )
+        ]
+
     def intersecting_ancestry(self):
         """
         Returns the list of intervals over which this interval's children intersect
@@ -302,6 +323,10 @@ class Simulator(object):
             #    So we are now in a position where we may are not BUILDING ancestry
             #    de novo, but rather updating ancestry that is already in memory.
             dead.is_alive = False
+            print(f"A = {dead.ancestry}")
+            # NOTE: EXPERIMENTAL
+            dead.remove_sample_mapping(sequence_length=self.sequence_length)
+            print(f"A = {dead.ancestry}")
             self.propagate_upwards(dead)
             self.population[j] = ind
         # print("done")
