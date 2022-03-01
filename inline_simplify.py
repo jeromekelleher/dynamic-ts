@@ -204,6 +204,7 @@ class Individual(object):
                                 found = True
                                 break
                     if not found:
+                        print(f"ADDING {seg} to ancestry of {self}")
                         self.ancestry.append(seg)
                 elif mapped_ind.index != self.index:
                     self.ancestry.append(seg)
@@ -331,6 +332,10 @@ class Simulator(object):
 
     def run(self, num_generations, simplify_interval=1):
         for _ in range(num_generations):
+            # NOTE: this does not help...
+            # for i in self.population:
+            #     if not i.is_alive:
+            #         i.ancestry.clear()
             self.run_generation()
             # print(len(self.dead))
 
