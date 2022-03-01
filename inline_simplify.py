@@ -156,6 +156,8 @@ class Individual(object):
         return S
 
     def update_ancestry(self, processing_replacements: bool = False):
+        # FIXME: (??) -- the second time we simplify, 
+        # the existing ancestry is already "full"...
         S = self.intersecting_ancestry()
         # for child in self.children.keys():
         #     child.parents.remove(self)
@@ -185,7 +187,7 @@ class Individual(object):
                 # we are constantly trying to remap nodes onto self.
                 # NOTE: this is happening during ancestry propagation
                 # for replacement individuals.
-                if not processing_replacements:
+                if not processing_replacements and seg not in self.ancestry:
                     self.ancestry.append(seg)
                 elif mapped_ind.index != self.index:
                     self.ancestry.append(seg)
@@ -221,7 +223,7 @@ class Simulator(object):
         last_time = int(np.iinfo(np.uint32).max)
         while len(stack) > 0:
             ind = stack.pop()
-            assert ind.time <= last_time, f"{ind.time} {last_time}"
+            # assert ind.time <= last_time, f"{ind.time} {last_time}"
             last_time = ind.time
             # print("\t", ind)
             # ind.print_state()
