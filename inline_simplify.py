@@ -184,6 +184,8 @@ class Individual(object):
         #     child.parents.remove(self)
         self.children.clear()
 
+        ancestry_i = 0
+
         for left, right, X in overlapping_segments(S):
             if len(X) == 1:
                 mapped_ind = X[0].child
@@ -218,26 +220,62 @@ class Individual(object):
                 #    a. unary transmissions "upgrade" to coalescences.
                 #    b. changes in [left, right) mapping to the
                 #       same non-self child get updated.
-                if not processing_replacements:
-                    # If a segment length has changed,
-                    # find it and update it
-                    # NOTE: this may be the wrong way to go...
-                    found = False
-                    for i in self.ancestry:
-                        if i.child.index == mapped_ind.index:
-                            if i.left == seg.left:
-                                seg.left = i.left
-                                found = True
-                                break
-                            elif i.right == seg.right:
-                                seg.left = i.left
-                                found = True
-                                break
-                    if not found:
-                        print(f"ADDING {seg} to ancestry of {self}")
+
+                # if not processing_replacements:
+                #    # If a segment length has changed,
+                #    # find it and update it
+                #    # NOTE: this may be the wrong way to go...
+                #    found = False
+                #    for i in self.ancestry:
+                #        if i.child.index == mapped_ind.index:
+                #            if i.left == seg.left:
+                #                seg.left = i.left
+                #                found = True
+                #                break
+                #            elif i.right == seg.right:
+                #                seg.left = i.left
+                #                found = True
+                #                break
+                #    if not found:
+                #        print(f"ADDING {seg} to ancestry of {self}")
+                #        self.ancestry.append(seg)
+                # elif mapped_ind.index != self.index:
+                #     self.ancestry.append(seg)
+
+                found_seg = None
+                while (
+                    ancestry_i < len(self.ancestry)
+                    and self.ancestry[ancestry_i].left <= seg.left
+                ):
+                    found_seg = self.ancestry[ancestry_i]
+                    ancestry_i += 1
+
+                print(f"found seg = {found_seg} {seg}")
+
+                if found_seg is not None:
+                    if found_seg.left == seg.left:
+                        if seg.child.index == self.index:
+                            print(f"maps to self: {self}")
+                            # overlaps a known coalescent
+                            pass
+                        else:
+                            # overlaps an existing ancestry seg
+                            if seg.child.index == found_seg.child.index:
+                                found_seg.left = min(seg.left, found_seg.left)
+                            else:
+                                print(f"promoting to coalsecence {found_seg} {seg}")
+                                found_seg.left = max(found_seg.left, seg.left)
+                                found_seg.right = min(found_seg.right, seg.right)
+                                # non-coalescence promoted to coalescence
+                                found_seg.child = self
+                                print(f"promoted to coalsecence {found_seg} {seg}")
+                else:
+                    print(f"ancestry_i = {ancestry_i}")
+                    if ancestry_i < len(self.ancestry):
+                        self.ancestry.insert(ancestry_i, seg)
+                    else:
                         self.ancestry.append(seg)
-                elif mapped_ind.index != self.index:
-                    self.ancestry.append(seg)
+
                 print("pre-assert")
                 self.print_state()
                 assert_non_overlapping(self.ancestry)
@@ -439,7 +477,7 @@ def main():
     # sim.run(1)
     sim.run(2)
     ts = sim.export()
-    # print(ts.draw_text())
+    print(ts.draw_text())
     # ts_simplify = ts.simplify()
     # print(ts_simplify.draw_text())
 
