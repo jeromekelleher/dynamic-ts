@@ -222,6 +222,12 @@ class Individual(object):
         #     child.parents.remove(self)
         self.children.clear()
 
+        # NOTE: this is a trivial, but undesirable
+        # fix to the problem of adding redudant ancestry
+        # when propagating upwards from replacements
+        # if not self.is_alive:
+        #     self.ancestry.clear()
+
         ancestry_i = 0
 
         for left, right, X in overlapping_segments(S):
