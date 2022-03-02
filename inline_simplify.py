@@ -493,6 +493,15 @@ if __name__ == "__main__":
     main()
 
 
+def test_remove_self_mapping():
+    L = 5
+    child = Individual(0, is_alive=True)
+    child.ancestry = [Segment(0, L, child)]
+    assert len(child.ancestry) == 1
+    child.remove_sample_mapping(L)
+    assert len(child.ancestry) == 0
+
+
 def test_foo():
     pop = []
     L = 5
