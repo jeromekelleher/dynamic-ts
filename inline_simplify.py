@@ -238,6 +238,8 @@ class Individual(object):
                 print(self, "unary", left, right, mapped_ind)
                 if self in mapped_ind.parents:
                     print(f"Removing parent {self.index} from child {mapped_ind.index}")
+                    if self.index == 0:
+                        print(self.ancestry)
                     mapped_ind.parents.remove(self)
             else:
                 mapped_ind = self
@@ -251,7 +253,7 @@ class Individual(object):
                     # steps.
                     # NOTE: this is actually WRONG in general,
                     # as it leads to long-term retengion of unary nodes.
-                    x.child.parents.add(self)
+                    # x.child.parents.add(self)
                 assert_non_overlapping(self.children[mapped_ind])
             # If an individual is alive it always has ancestry over the
             # full segment, so we don't overwrite this.
@@ -418,6 +420,8 @@ class Simulator(object):
 
     def check_state(self):
         for ind in self.all_reachable():
+            print(f"REACHABLE: {ind.index}")
+            ind.print_state()
             # print("reachable individiual:")
             # ind.print_state()
             if ind.is_alive:
@@ -430,6 +434,10 @@ class Simulator(object):
                 assert_non_overlapping(ind.ancestry)
             for child, segments in ind.children.items():
                 assert_non_overlapping(segments)
+                # FIXME: WHY/HOW are we getting self added
+                # as child of self?
+                if child is not ind:
+                    assert ind in child.parents, f"{ind} {child}"
             for parent in ind.parents:
                 if ind not in parent.children:
                     print("the failing parent is")
@@ -502,7 +510,7 @@ def main():
     # sim = Simulator(100, 5, death_proba=1.0, seed=seed)
     sim = Simulator(4, 5, death_proba=1.0, seed=seed)
     # works for 1 generation...
-    sim.run(6)
+    sim.run(1)
     # sim.run(2)
     ts = sim.export()
     print(ts.draw_text())
