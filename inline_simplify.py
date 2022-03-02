@@ -234,16 +234,14 @@ class Individual(object):
             # print(left, right, X)
             if len(X) == 1:
                 # print("unary")
-                if self.index == 3:
-                    print(left, right, X)
                 mapped_ind = X[0].child
+                print(self, "unary", left, right, mapped_ind)
                 if self in mapped_ind.parents:
                     mapped_ind.parents.remove(self)
             else:
                 mapped_ind = self
-                if self.index == 3:
-                    print(left, right, X)
                 for x in X:
+                    print("adding", self, x.child, left, right)
                     self.add_child_segment(x.child, left, right)
                 assert_non_overlapping(self.children[mapped_ind])
             # If an individual is alive it always has ancestry over the
@@ -491,7 +489,7 @@ class Simulator(object):
 
 
 def main():
-    seed = 1
+    seed = 2
     # sim = Simulator(100, 5, death_proba=1.0, seed=seed)
     sim = Simulator(4, 5, death_proba=1.0, seed=seed)
     # works for 1 generation...
@@ -695,3 +693,17 @@ def test_failing_case_1():
 def test_failing_case_2():
     pop = failing_case_2()
     individuals = collect_unique_individuals(pop)
+
+    parent_indexes = [(), (), (), (), (0,), (), (0,), ()]
+
+    for i in individuals:
+        if i.index == 0:
+            i.print_state()
+        print("CHILDREN")
+        for j in i.children:
+            j.print_state()
+
+    for i in individuals:
+        assert len(i.parents) == len(parent_indexes[i.index]), f"{i} -> {i.parents}"
+        for p in i.parents:
+            assert p.index in parent_indexes[i.index]
