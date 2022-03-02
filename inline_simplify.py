@@ -638,9 +638,23 @@ def failing_case_2():
         propagate_upwards(ind, True)
 
 
+def collect_unique_individuals(pop):
+    individuals = set()
+    for i in pop:
+        stack = [i]
+        while len(stack) > 0:
+            j = stack.pop()
+            individuals.add(j)
+            for p in j.parents:
+                stack.append(p)
+    return individuals
+
+
 def test_failing_case_1():
     pop = failing_case_1()
+    individuals = collect_unique_individuals(pop)
 
 
 def test_failing_case_2():
     pop = failing_case_2()
+    individuals = collect_unique_individuals(pop)
