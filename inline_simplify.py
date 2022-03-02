@@ -94,11 +94,11 @@ def propagate_upwards(ind, clear_if_not_alive: bool = False):
         # We should only have to visit the parents for which we have ancestral
         # segents, and so the areas of the graph we traverse should be
         # quickly localised.
-        print("before")
-        ind.print_state()
+        # print("before")
+        # ind.print_state()
         ind.update_ancestry(clear_if_not_alive)
-        print("after")
-        ind.print_state()
+        # print("after")
+        # ind.print_state()
         for parent in ind.parents:
             assert parent.time < ind.time
             stack.append(parent)
@@ -217,6 +217,7 @@ class Individual(object):
         # FIXME: (??) -- the second time we simplify,
         # the existing ancestry is already "full"...
         S = self.intersecting_ancestry()
+        print(S)
         # for child in self.children.keys():
         #     child.parents.remove(self)
         self.children.clear()
@@ -224,7 +225,9 @@ class Individual(object):
         ancestry_i = 0
 
         for left, right, X in overlapping_segments(S):
+            print(left, right, X)
             if len(X) == 1:
+                print("unary")
                 mapped_ind = X[0].child
                 seg = Segment(X[0].left, X[0].right, mapped_ind)
                 # TODO: figure out how/why we are trying
@@ -242,6 +245,8 @@ class Individual(object):
             # full segment, so we don't overwrite this.
             if not self.is_alive:
                 seg = Segment(left, right, mapped_ind)
+                print(f"Adding {seg}")
+                self.ancestry.append(seg)
                 # TODO: figure out how/why we are trying
                 # to put redundant segs into self.ancestry.
                 # NOTE: what is happening here is that
@@ -279,46 +284,46 @@ class Individual(object):
                 # elif mapped_ind.index != self.index:
                 #     self.ancestry.append(seg)
 
-                found_seg = None
+                # found_seg = None
 
                 # TODO: this is not correct.
                 # We need to be looking explicitly for overlaps
                 # here and dealing with them as they come up.
-                while (
-                    ancestry_i < len(self.ancestry)
-                    and self.ancestry[ancestry_i].left <= seg.left
-                ):
-                    found_seg = self.ancestry[ancestry_i]
-                    ancestry_i += 1
+                # while (
+                #     ancestry_i < len(self.ancestry)
+                #     and self.ancestry[ancestry_i].left <= seg.left
+                # ):
+                #     found_seg = self.ancestry[ancestry_i]
+                #     ancestry_i += 1
 
-                print(f"found seg = {found_seg} {seg}")
+                # # print(f"found seg = {found_seg} {seg}")
 
-                if found_seg is not None:
-                    if found_seg.left == seg.left:
-                        if seg.child.index == self.index:
-                            print(f"maps to self: {self}")
-                            # overlaps a known coalescent
-                            pass
-                        else:
-                            # overlaps an existing ancestry seg
-                            if seg.child.index == found_seg.child.index:
-                                found_seg.left = min(seg.left, found_seg.left)
-                            else:
-                                print(f"promoting to coalsecence {found_seg} {seg}")
-                                found_seg.left = max(found_seg.left, seg.left)
-                                found_seg.right = min(found_seg.right, seg.right)
-                                # non-coalescence promoted to coalescence
-                                found_seg.child = self
-                                print(f"promoted to coalsecence {found_seg} {seg}")
-                else:
-                    print(f"ancestry_i = {ancestry_i}")
-                    if ancestry_i < len(self.ancestry):
-                        self.ancestry.insert(ancestry_i, seg)
-                    else:
-                        self.ancestry.append(seg)
+                # if found_seg is not None:
+                #     if found_seg.left == seg.left:
+                #         if seg.child.index == self.index:
+                #             # print(f"maps to self: {self}")
+                #             # overlaps a known coalescent
+                #             pass
+                #         else:
+                #             # overlaps an existing ancestry seg
+                #             if seg.child.index == found_seg.child.index:
+                #                 found_seg.left = min(seg.left, found_seg.left)
+                #             else:
+                #                 print(f"promoting to coalsecence {found_seg} {seg}")
+                #                 found_seg.left = max(found_seg.left, seg.left)
+                #                 found_seg.right = min(found_seg.right, seg.right)
+                #                 # non-coalescence promoted to coalescence
+                #                 found_seg.child = self
+                #                 print(f"promoted to coalsecence {found_seg} {seg}")
+                # else:
+                #     # print(f"ancestry_i = {ancestry_i}")
+                #     if ancestry_i < len(self.ancestry):
+                #         self.ancestry.insert(ancestry_i, seg)
+                #     else:
+                #         self.ancestry.append(seg)
 
-                print("pre-assert")
-                self.print_state()
+                # print("pre-assert")
+                # self.print_state()
                 assert_non_overlapping(self.ancestry)
                 # if seg not in self.ancestry:
                 #     self.ancestry.append(seg)
@@ -481,8 +486,8 @@ def main():
     # sim = Simulator(100, 5, death_proba=1.0, seed=seed)
     sim = Simulator(10, 5, death_proba=1.0, seed=seed)
     # works for 1 generation...
-    # sim.run(1)
-    sim.run(2)
+    sim.run(1)
+    # sim.run(2)
     ts = sim.export()
     print(ts.draw_text())
     # ts_simplify = ts.simplify()
@@ -495,6 +500,7 @@ if __name__ == "__main__":
 
 def test_remove_self_mapping():
     L = 5
+    Individual._next_index = 0
     child = Individual(0, is_alive=True)
     child.ancestry = [Segment(0, L, child)]
     assert len(child.ancestry) == 1
@@ -505,7 +511,30 @@ def test_remove_self_mapping():
 def test_foo():
     pop = []
     L = 5
-    for _ in range(2):
-        child = Individual(0, is_alive=True)
-        child.ancestry = [Segment(0, L, child)]
-        pop.append(child)
+    Individual._next_index = 0
+    for i in range(2):
+        parent = Individual(0, is_alive=False)
+        assert parent.index == i
+        pop.append(parent)
+
+    c = Individual(1, True)
+    c.ancestry.append(Segment(0, L, c))
+    record_inheritance(0, L // 2, pop[0], c)
+    cc = Individual(1, True)
+    cc.ancestry.append(Segment(0, L, cc))
+    record_inheritance(L // 3, 3 * L // 4, pop[0], cc)
+
+    assert pop[0] in c.parents
+    assert pop[1] not in c.parents
+    assert pop[0] in cc.parents
+    assert pop[1] not in cc.parents
+
+    e = pop[0].intersecting_ancestry()
+    assert len(e) == 2
+
+    propagate_upwards(pop[0], True)
+
+    assert len(pop[0].ancestry) == 3
+    assert Segment(0, 1, c) in pop[0].ancestry
+    assert Segment(1, 2, pop[0]) in pop[0].ancestry
+    assert Segment(2, 3, cc) in pop[0].ancestry
