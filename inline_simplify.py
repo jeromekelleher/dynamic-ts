@@ -96,7 +96,7 @@ def propagate_upwards(ind, clear_if_not_alive: bool = False):
         # quickly localised.
         # print("before")
         # ind.print_state()
-        print(f"updating {ind}")
+        # print(f"updating {ind}")
         ind.update_ancestry(clear_if_not_alive)
         # print("after")
         # ind.print_state()
@@ -225,9 +225,9 @@ class Individual(object):
         ancestry_i = 0
 
         for left, right, X in overlapping_segments(S):
-            print(left, right, X)
+            # print(left, right, X)
             if len(X) == 1:
-                print("unary")
+                # print("unary")
                 mapped_ind = X[0].child
                 seg = Segment(X[0].left, X[0].right, mapped_ind)
                 # TODO: figure out how/why we are trying
@@ -245,7 +245,7 @@ class Individual(object):
             # full segment, so we don't overwrite this.
             if not self.is_alive:
                 seg = Segment(left, right, mapped_ind)
-                print(f"Adding {seg} to {self.ancestry}")
+                # print(f"Adding {seg} to {self.ancestry}")
                 self.ancestry.append(seg)
                 # TODO: figure out how/why we are trying
                 # to put redundant segs into self.ancestry.
@@ -362,6 +362,7 @@ class Simulator(object):
                 # Using integers here just to make debugging easier
                 x = self.rng.randint(1, self.sequence_length - 1)
                 assert 0 < x < self.sequence_length
+                print(left_parent, right_parent, j, x)
                 child = Individual(self.time)
                 child.ancestry = [Segment(0, self.sequence_length, child)]
                 replacements.append((j, child))
@@ -382,10 +383,8 @@ class Simulator(object):
             #    So we are now in a position where we may are not BUILDING ancestry
             #    de novo, but rather updating ancestry that is already in memory.
             dead.is_alive = False
-            print(f"A = {dead.ancestry}")
             # NOTE: EXPERIMENTAL
             dead.remove_sample_mapping(sequence_length=self.sequence_length)
-            print(f"A = {dead.ancestry}")
             propagate_upwards(dead)
             self.population[j] = ind
         # print("done")
@@ -565,3 +564,36 @@ def test_basics():
     assert len(pop[1].ancestry) == 2
     assert Segment(0, L // 3, cc) in pop[1].ancestry
     assert Segment(3 * L // 4, L, cc) in pop[1].ancestry
+
+
+def test_failing_case():
+    # seed = 1, N=4, L=5, using basically Jerome's prototype
+    pop = []
+    L = 5
+    Individual._next_index = 0
+    for i in range(4):
+        parent = Individual(0, is_alive=False)
+        assert parent.index == i
+        pop.append(parent)
+
+    replacements = []
+    x = [1, 4, 1, 1]  # xover positions
+    parents = [(0, 2), (3, 3), (0, 3), (3, 3)]
+    for i in range(4):
+        child = Individual(1)
+        child.ancestry.append(Segment(0, L, child))
+        record_inheritance(0, x[i], pop[parents[i][0]], child)
+        record_inheritance(x[i], L, pop[parents[i][1]], child)
+        replacements.append((i, child))
+    for j, ind in replacements:
+        dead = pop[j]
+        dead.is_alive = False
+        # NOTE: EXPERIMENTAL
+        dead.remove_sample_mapping(sequence_length=L)
+        propagate_upwards(dead)
+        pop[j] = ind
+
+    for _, ind in replacements:
+        # print("replacement")
+        # ind.print_state()
+        propagate_upwards(ind, True)
