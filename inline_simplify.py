@@ -153,6 +153,7 @@ class Individual(object):
                 return True
             if not (seg.left == 0 and seg.right == sequence_length):
                 return True
+            return False
 
         self.ancestry = [
             i
