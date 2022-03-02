@@ -245,7 +245,7 @@ class Individual(object):
             # full segment, so we don't overwrite this.
             if not self.is_alive:
                 seg = Segment(left, right, mapped_ind)
-                print(f"Adding {seg}")
+                print(f"Adding {seg} to {self.ancestry}")
                 self.ancestry.append(seg)
                 # TODO: figure out how/why we are trying
                 # to put redundant segs into self.ancestry.
@@ -484,7 +484,7 @@ class Simulator(object):
 def main():
     seed = 1
     # sim = Simulator(100, 5, death_proba=1.0, seed=seed)
-    sim = Simulator(10, 5, death_proba=1.0, seed=seed)
+    sim = Simulator(4, 5, death_proba=1.0, seed=seed)
     # works for 1 generation...
     sim.run(1)
     # sim.run(2)
