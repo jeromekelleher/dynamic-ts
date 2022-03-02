@@ -249,6 +249,8 @@ class Individual(object):
                     # NOTE: the "need" for this may be a side
                     # effect of incorrect logic in the propagation
                     # steps.
+                    # NOTE: this is actually WRONG in general,
+                    # as it leads to long-term retengion of unary nodes.
                     x.child.parents.add(self)
                 assert_non_overlapping(self.children[mapped_ind])
             # If an individual is alive it always has ancestry over the
@@ -500,10 +502,22 @@ def main():
     # sim = Simulator(100, 5, death_proba=1.0, seed=seed)
     sim = Simulator(4, 5, death_proba=1.0, seed=seed)
     # works for 1 generation...
-    sim.run(5)
+    sim.run(6)
     # sim.run(2)
     ts = sim.export()
     print(ts.draw_text())
+
+    stack = [sim.population[0]]
+    while len(stack) > 0:
+        ind = stack.pop()
+        if ind.index == 21:
+            ind.print_state()
+            print("the parents of 21")
+            for p in ind.parents:
+                p.print_state()
+            break
+        for p in ind.parents:
+            stack.append(p)
     # ts_simplify = ts.simplify()
     # print(ts_simplify.draw_text())
 
