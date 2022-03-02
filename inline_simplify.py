@@ -234,11 +234,15 @@ class Individual(object):
             # print(left, right, X)
             if len(X) == 1:
                 # print("unary")
+                if self.index == 3:
+                    print(left, right, X)
                 mapped_ind = X[0].child
                 if self in mapped_ind.parents:
                     mapped_ind.parents.remove(self)
             else:
                 mapped_ind = self
+                if self.index == 3:
+                    print(left, right, X)
                 for x in X:
                     self.add_child_segment(x.child, left, right)
                 assert_non_overlapping(self.children[mapped_ind])
@@ -637,6 +641,8 @@ def failing_case_2():
         # ind.print_state()
         propagate_upwards(ind, True)
 
+    return pop
+
 
 def collect_unique_individuals(pop):
     individuals = set()
@@ -653,6 +659,37 @@ def collect_unique_individuals(pop):
 def test_failing_case_1():
     pop = failing_case_1()
     individuals = collect_unique_individuals(pop)
+
+    parent_indexes = [(), (), (), (), (0,), (3,), (3, 0), (3,)]
+
+    for i in individuals:
+        assert len(i.parents) == len(parent_indexes[i.index]), f"{i} -> {i.parents}"
+        for p in i.parents:
+            assert p.index in parent_indexes[i.index]
+
+    for i in individuals:
+        if i.index > 3:
+            assert i.is_alive
+            assert len(i.ancestry) == 1
+        else:
+            assert not i.is_alive
+
+            assert i.index != 1
+            assert i.index != 2
+
+            if i.index == 0:
+                assert len(i.ancestry) == 1
+                assert i.ancestry[0].child is i
+                assert i.ancestry[0].left == 0
+                assert i.ancestry[0].right == 1
+
+            if i.index == 3:
+                assert len(i.ancestry) == 3
+                segs = [(0, 1), (1, 4), (4, 5)]
+                for a, s in zip(i.ancestry, segs):
+                    assert a.left == s[0]
+                    assert a.right == s[1]
+                    assert a.child is i
 
 
 def test_failing_case_2():
