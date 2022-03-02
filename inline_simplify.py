@@ -557,9 +557,7 @@ def test_basics():
     assert Segment(0, L // 3, cc) in pop[1].ancestry
     assert Segment(3 * L // 4, L, cc) in pop[1].ancestry
 
-    print("propagating c")
     propagate_upwards(c, True)
-    print("propagating cc")
     propagate_upwards(cc, True)
 
     assert len(pop[0].ancestry) == 3
