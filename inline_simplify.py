@@ -252,10 +252,13 @@ class Individual(object):
             if not self.is_alive:
                 seg = Segment(left, right, mapped_ind)
                 # print(f"Adding {seg} to {self.ancestry}")
+                new_segment = True
                 for i in self.ancestry:
                     if i.right > seg.left and seg.right > i.left:
                         print(f"overlapz: {i}, {seg}")
-                self.ancestry.append(seg)
+                        new_segment = False
+                if new_segment:
+                    self.ancestry.append(seg)
                 # TODO: figure out how/why we are trying
                 # to put redundant segs into self.ancestry.
                 # NOTE: what is happening here is that
@@ -490,7 +493,7 @@ class Simulator(object):
 
 
 def main():
-    seed = 2
+    seed = 1
     # sim = Simulator(100, 5, death_proba=1.0, seed=seed)
     sim = Simulator(4, 5, death_proba=1.0, seed=seed)
     # works for 1 generation...
