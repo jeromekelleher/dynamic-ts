@@ -466,6 +466,7 @@ class Simulator(object):
                 individuals.add(ind)
                 for parent in ind.parents:
                     if parent not in individuals:
+                        print(f"REACHING: parent {parent.index} is reachable via {ind.index}")
                         stack.append(parent)
         return individuals
 
