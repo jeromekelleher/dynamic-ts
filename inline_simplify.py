@@ -245,7 +245,8 @@ class Individual(object):
                     print("adding", self, x.child, left, right)
                     print(f"parents of {x.child} -> {x.child.parents}")
                     self.add_child_segment(x.child, left, right)
-                    assert self in x.child.parents
+                    # assert self in x.child.parents
+                    x.child.parents.add(self)
                 assert_non_overlapping(self.children[mapped_ind])
             # If an individual is alive it always has ancestry over the
             # full segment, so we don't overwrite this.
@@ -496,7 +497,7 @@ def main():
     # sim = Simulator(100, 5, death_proba=1.0, seed=seed)
     sim = Simulator(4, 5, death_proba=1.0, seed=seed)
     # works for 1 generation...
-    sim.run(1)
+    sim.run(5)
     # sim.run(2)
     ts = sim.export()
     print(ts.draw_text())
