@@ -235,7 +235,7 @@ class Individual(object):
             if len(X) == 1:
                 # print("unary")
                 mapped_ind = X[0].child
-                seg = Segment(X[0].left, X[0].right, mapped_ind)
+                # seg = Segment(X[0].left, X[0].right, mapped_ind)
                 # TODO: figure out how/why we are trying
                 # to put redundant segs into self.ancestry.
                 # if seg not in self.ancestry:
