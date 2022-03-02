@@ -481,7 +481,7 @@ class Simulator(object):
 
 
 def main():
-    seed = 1
+    seed = 2
     # sim = Simulator(100, 5, death_proba=1.0, seed=seed)
     sim = Simulator(4, 5, death_proba=1.0, seed=seed)
     # works for 1 generation...
@@ -566,7 +566,7 @@ def test_basics():
     assert Segment(3 * L // 4, L, cc) in pop[1].ancestry
 
 
-def test_failing_case():
+def test_failing_case_1():
     # seed = 1, N=4, L=5, using basically Jerome's prototype
     pop = []
     L = 5
@@ -579,6 +579,39 @@ def test_failing_case():
     replacements = []
     x = [1, 4, 1, 1]  # xover positions
     parents = [(0, 2), (3, 3), (0, 3), (3, 3)]
+    for i in range(4):
+        child = Individual(1)
+        child.ancestry.append(Segment(0, L, child))
+        record_inheritance(0, x[i], pop[parents[i][0]], child)
+        record_inheritance(x[i], L, pop[parents[i][1]], child)
+        replacements.append((i, child))
+    for j, ind in replacements:
+        dead = pop[j]
+        dead.is_alive = False
+        # NOTE: EXPERIMENTAL
+        dead.remove_sample_mapping(sequence_length=L)
+        propagate_upwards(dead)
+        pop[j] = ind
+
+    for _, ind in replacements:
+        # print("replacement")
+        # ind.print_state()
+        propagate_upwards(ind, True)
+
+
+def test_failing_case_2():
+    # seed = 2, N=4, L=5, using basically Jerome's prototype
+    pop = []
+    L = 5
+    Individual._next_index = 0
+    for i in range(4):
+        parent = Individual(0, is_alive=False)
+        assert parent.index == i
+        pop.append(parent)
+
+    replacements = []
+    x = [1, 3, 4, 3]  # xover positions
+    parents = [(0, 0), (1, 2), (0, 1), (2, 3)]
     for i in range(4):
         child = Individual(1)
         child.ancestry.append(Segment(0, L, child))
