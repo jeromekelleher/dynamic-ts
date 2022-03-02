@@ -237,18 +237,21 @@ class Individual(object):
                 mapped_ind = X[0].child
                 print(self, "unary", left, right, mapped_ind)
                 if self in mapped_ind.parents:
+                    print(f"Removing parent {self.index} from child {mapped_ind.index}")
                     mapped_ind.parents.remove(self)
             else:
                 mapped_ind = self
                 for x in X:
                     print("adding", self, x.child, left, right)
+                    print(f"parents of {x.child} -> {x.child.parents}")
                     self.add_child_segment(x.child, left, right)
+                    assert self in x.child.parents
                 assert_non_overlapping(self.children[mapped_ind])
             # If an individual is alive it always has ancestry over the
             # full segment, so we don't overwrite this.
             if not self.is_alive:
                 seg = Segment(left, right, mapped_ind)
-                # print(f"Adding {seg} to {self.ancestry}")
+                print(f"Adding {seg} to {self.ancestry} of {self.index}")
                 new_segment = True
                 for i in self.ancestry:
                     if i.right > seg.left and seg.right > i.left:
@@ -696,12 +699,12 @@ def test_failing_case_2():
 
     parent_indexes = [(), (), (), (), (0,), (), (0,), ()]
 
-    for i in individuals:
-        if i.index == 0:
-            i.print_state()
-        print("CHILDREN")
-        for j in i.children:
-            j.print_state()
+    # for i in individuals:
+    #     if i.index == 0:
+    #         i.print_state()
+    #     print("CHILDREN")
+    #     for j in i.children:
+    #         j.print_state()
 
     for i in individuals:
         assert len(i.parents) == len(parent_indexes[i.index]), f"{i} -> {i.parents}"
