@@ -252,6 +252,9 @@ class Individual(object):
             if not self.is_alive:
                 seg = Segment(left, right, mapped_ind)
                 # print(f"Adding {seg} to {self.ancestry}")
+                for i in self.ancestry:
+                    if i.right > seg.left and seg.right > i.left:
+                        print(f"overlapz: {i}, {seg}")
                 self.ancestry.append(seg)
                 # TODO: figure out how/why we are trying
                 # to put redundant segs into self.ancestry.
