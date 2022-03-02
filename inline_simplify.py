@@ -96,6 +96,7 @@ def propagate_upwards(ind, clear_if_not_alive: bool = False):
         # quickly localised.
         # print("before")
         # ind.print_state()
+        print(f"updating {ind}")
         ind.update_ancestry(clear_if_not_alive)
         # print("after")
         # ind.print_state()
@@ -539,20 +540,22 @@ def test_basics():
     e = pop[0].intersecting_ancestry()
     assert len(e) == 2
 
-    propagate_upwards(pop[0], True)
+    propagate_upwards(pop[0], False)
 
     assert len(pop[0].ancestry) == 3
     assert Segment(0, 1, c) in pop[0].ancestry
     assert Segment(1, 2, pop[0]) in pop[0].ancestry
     assert Segment(2, 3, cc) in pop[0].ancestry
 
-    propagate_upwards(pop[1], True)
+    propagate_upwards(pop[1], False)
     assert len(pop[1].ancestry) == 2
     assert Segment(0, L // 3, cc) in pop[1].ancestry
     assert Segment(3 * L // 4, L, cc) in pop[1].ancestry
 
-    propagate_upwards(c, False)
-    propagate_upwards(cc, False)
+    print("propagating c")
+    propagate_upwards(c, True)
+    print("propagating cc")
+    propagate_upwards(cc, True)
 
     assert len(pop[0].ancestry) == 3
     assert Segment(0, 1, c) in pop[0].ancestry
