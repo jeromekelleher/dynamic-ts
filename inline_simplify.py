@@ -250,7 +250,6 @@ class Individual(object):
                 new_segment = True
                 for i in self.ancestry:
                     if i.right > seg.left and seg.right > i.left:
-                        print(f"overlapz: {i}, {seg}")
                         new_segment = False
                 if new_segment:
                     self.ancestry.append(seg)
