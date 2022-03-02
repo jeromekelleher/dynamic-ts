@@ -494,4 +494,9 @@ if __name__ == "__main__":
 
 
 def test_foo():
-    assert False
+    pop = []
+    L = 5
+    for _ in range(2):
+        child = Individual(0, is_alive=True)
+        child.ancestry = [Segment(0, L, child)]
+        pop.append(child)
