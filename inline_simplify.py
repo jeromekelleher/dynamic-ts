@@ -78,6 +78,42 @@ def overlapping_segments(segments):
             yield left, right, X
 
 
+def propagate_upwards(ind, clear_if_not_alive: bool = False):
+    pass
+    # This isn't working.
+    # print("PROPAGATE", ind)
+    stack = [ind]
+    last_time = int(np.iinfo(np.uint32).max)
+    while len(stack) > 0:
+        ind = stack.pop()
+        # assert ind.time <= last_time, f"{ind.time} {last_time}"
+        last_time = ind.time
+        # print("\t", ind)
+        # ind.print_state()
+        # We're visting everything here at the moment, but we don't need to.
+        # We should only have to visit the parents for which we have ancestral
+        # segents, and so the areas of the graph we traverse should be
+        # quickly localised.
+        print("before")
+        ind.print_state()
+        ind.update_ancestry(clear_if_not_alive)
+        print("after")
+        ind.print_state()
+        for parent in ind.parents:
+            assert parent.time < ind.time
+            stack.append(parent)
+
+
+def record_inheritance(left, right, parent, child):
+    """
+    Record the inheritances of genetic material from parent to child over the
+    from coordinate left to right.
+    """
+    child.parents.add(parent)
+    parent.add_child_segment(child, left, right)
+    # print("record", child, parent, child.parents)
+
+
 class Segment(object):
     """
     An ancestral segment mapping a given individual to a half-open genomic
@@ -308,40 +344,6 @@ class Simulator(object):
         self.time = 1
         self.population = [Individual(self.time) for _ in range(population_size)]
 
-    def propagate_upwards(self, ind, clear_if_not_alive: bool = False):
-        pass
-        # This isn't working.
-        # print("PROPAGATE", ind)
-        stack = [ind]
-        last_time = int(np.iinfo(np.uint32).max)
-        while len(stack) > 0:
-            ind = stack.pop()
-            # assert ind.time <= last_time, f"{ind.time} {last_time}"
-            last_time = ind.time
-            # print("\t", ind)
-            # ind.print_state()
-            # We're visting everything here at the moment, but we don't need to.
-            # We should only have to visit the parents for which we have ancestral
-            # segents, and so the areas of the graph we traverse should be
-            # quickly localised.
-            print("before")
-            ind.print_state()
-            ind.update_ancestry(clear_if_not_alive)
-            print("after")
-            ind.print_state()
-            for parent in ind.parents:
-                assert parent.time < ind.time
-                stack.append(parent)
-
-    def record_inheritance(self, left, right, parent, child):
-        """
-        Record the inheritances of genetic material from parent to child over the
-        from coordinate left to right.
-        """
-        child.parents.add(parent)
-        parent.add_child_segment(child, left, right)
-        # print("record", child, parent, child.parents)
-
     def run_generation(self):
         """
         Implements a single generation.
@@ -358,8 +360,8 @@ class Simulator(object):
                 child = Individual(self.time)
                 child.ancestry = [Segment(0, self.sequence_length, child)]
                 replacements.append((j, child))
-                self.record_inheritance(0, x, left_parent, child)
-                self.record_inheritance(x, self.sequence_length, right_parent, child)
+                record_inheritance(0, x, left_parent, child)
+                record_inheritance(x, self.sequence_length, right_parent, child)
 
         # First propagate the loss of the ancestral material from the newly dead
         print("pdead")
@@ -379,7 +381,7 @@ class Simulator(object):
             # NOTE: EXPERIMENTAL
             dead.remove_sample_mapping(sequence_length=self.sequence_length)
             print(f"A = {dead.ancestry}")
-            self.propagate_upwards(dead)
+            propagate_upwards(dead)
             self.population[j] = ind
         # print("done")
         # Now propagate the gain in the ancestral material from the children upwards.
@@ -387,7 +389,7 @@ class Simulator(object):
         for _, ind in replacements:
             # print("replacement")
             # ind.print_state()
-            self.propagate_upwards(ind, True)
+            propagate_upwards(ind, True)
         self.check_state()
 
         # for ind in self.all_reachable():
