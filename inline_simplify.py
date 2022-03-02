@@ -605,10 +605,6 @@ def failing_case_1():
     return pop
 
 
-def test_failing_case_1():
-    pop = failing_case_1()
-
-
 def failing_case_2():
     # seed = 2, N=4, L=5, using basically Jerome's prototype
     pop = []
@@ -640,6 +636,10 @@ def failing_case_2():
         # print("replacement")
         # ind.print_state()
         propagate_upwards(ind, True)
+
+
+def test_failing_case_1():
+    pop = failing_case_1()
 
 
 def test_failing_case_2():
