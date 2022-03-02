@@ -508,7 +508,10 @@ def test_remove_self_mapping():
     assert len(child.ancestry) == 0
 
 
-def test_foo():
+def test_basics():
+    """
+    Simple case, easy to reason through.
+    """
     pop = []
     L = 5
     Individual._next_index = 0
@@ -517,6 +520,7 @@ def test_foo():
         assert parent.index == i
         pop.append(parent)
 
+    # transmission w/coalescence
     c = Individual(1, True)
     c.ancestry.append(Segment(0, L, c))
     record_inheritance(0, L // 2, pop[0], c)
@@ -524,10 +528,14 @@ def test_foo():
     cc.ancestry.append(Segment(0, L, cc))
     record_inheritance(L // 3, 3 * L // 4, pop[0], cc)
 
+    # 2x unary edges
+    record_inheritance(0, L // 3, pop[1], cc)
+    record_inheritance(3 * L // 4, L, pop[1], cc)
+
     assert pop[0] in c.parents
     assert pop[1] not in c.parents
     assert pop[0] in cc.parents
-    assert pop[1] not in cc.parents
+    assert pop[1] in cc.parents
 
     e = pop[0].intersecting_ancestry()
     assert len(e) == 2
@@ -538,3 +546,20 @@ def test_foo():
     assert Segment(0, 1, c) in pop[0].ancestry
     assert Segment(1, 2, pop[0]) in pop[0].ancestry
     assert Segment(2, 3, cc) in pop[0].ancestry
+
+    propagate_upwards(pop[1], True)
+    assert len(pop[1].ancestry) == 2
+    assert Segment(0, L // 3, cc) in pop[1].ancestry
+    assert Segment(3 * L // 4, L, cc) in pop[1].ancestry
+
+    propagate_upwards(c, False)
+    propagate_upwards(cc, False)
+
+    assert len(pop[0].ancestry) == 3
+    assert Segment(0, 1, c) in pop[0].ancestry
+    assert Segment(1, 2, pop[0]) in pop[0].ancestry
+    assert Segment(2, 3, cc) in pop[0].ancestry
+
+    assert len(pop[1].ancestry) == 2
+    assert Segment(0, L // 3, cc) in pop[1].ancestry
+    assert Segment(3 * L // 4, L, cc) in pop[1].ancestry
