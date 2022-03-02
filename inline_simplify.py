@@ -489,3 +489,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+def test_foo():
+    assert False

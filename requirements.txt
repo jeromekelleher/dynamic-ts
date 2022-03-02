@@ -1,2 +1,3 @@
 sortedcollections
 tskit
+pytest
