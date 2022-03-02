@@ -570,7 +570,7 @@ def test_basics():
     assert Segment(3 * L // 4, L, cc) in pop[1].ancestry
 
 
-def test_failing_case_1():
+def failing_case_1():
     # seed = 1, N=4, L=5, using basically Jerome's prototype
     pop = []
     L = 5
@@ -602,8 +602,14 @@ def test_failing_case_1():
         # ind.print_state()
         propagate_upwards(ind, True)
 
+    return pop
 
-def test_failing_case_2():
+
+def test_failing_case_1():
+    pop = failing_case_1()
+
+
+def failing_case_2():
     # seed = 2, N=4, L=5, using basically Jerome's prototype
     pop = []
     L = 5
@@ -634,3 +640,7 @@ def test_failing_case_2():
         # print("replacement")
         # ind.print_state()
         propagate_upwards(ind, True)
+
+
+def test_failing_case_2():
+    pop = failing_case_2()
