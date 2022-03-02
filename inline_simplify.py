@@ -217,7 +217,6 @@ class Individual(object):
         # FIXME: (??) -- the second time we simplify,
         # the existing ancestry is already "full"...
         S = self.intersecting_ancestry()
-        print(S)
         # for child in self.children.keys():
         #     child.parents.remove(self)
         self.children.clear()
