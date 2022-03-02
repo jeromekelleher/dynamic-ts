@@ -246,6 +246,9 @@ class Individual(object):
                     print(f"parents of {x.child} -> {x.child.parents}")
                     self.add_child_segment(x.child, left, right)
                     # assert self in x.child.parents
+                    # NOTE: the "need" for this may be a side
+                    # effect of incorrect logic in the propagation
+                    # steps.
                     x.child.parents.add(self)
                 assert_non_overlapping(self.children[mapped_ind])
             # If an individual is alive it always has ancestry over the
