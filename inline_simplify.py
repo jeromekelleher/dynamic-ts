@@ -240,7 +240,26 @@ class Individual(object):
                     print(f"Removing parent {self.index} from child {mapped_ind.index}")
                     if self.index == 0:
                         print(self.ancestry)
-                    mapped_ind.parents.remove(self)
+
+                    # This is only correct for THIS SEGMENT
+                    # but is wrong in general.
+                    # The "failing_case_2" is an example
+                    # of where this is removed, but there
+                    # are other, non-overlapping segs existing as edges
+                    # mapped_ind.parents.remove(self)
+
+                    # Remove the parent i.f.f there
+                    # are no other edges mapping to this same child
+                    non_overlapping_edges_exist = False
+                    if mapped_ind in self.children:
+                        for seg in self.children[mapped_ind]:
+                            if not (seg.right > X[0].left and X[0].right > seg.left):
+                                non_overlapping_edges_exist = True
+                                break
+
+                    if not non_overlapping_edges_exist:
+                        mapped_ind.parents.remove(self)
+
             else:
                 mapped_ind = self
                 for x in X:
