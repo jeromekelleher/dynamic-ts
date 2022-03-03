@@ -259,6 +259,8 @@ class Individual(object):
 
                     if not non_overlapping_edges_exist:
                         mapped_ind.parents.remove(self)
+                    else:
+                        assert self in mapped_ind.parents
 
             else:
                 mapped_ind = self
@@ -528,12 +530,12 @@ class Simulator(object):
 
 
 def main():
-    seed = 2
+    seed = 1
     # sim = Simulator(100, 5, death_proba=1.0, seed=seed)
     sim = Simulator(4, 5, death_proba=1.0, seed=seed)
     # works for 1 generation...
-    sim.run(1)
-    # sim.run(2)
+    # sim.run(1)
+    sim.run(2)
     ts = sim.export()
     print(ts.draw_text())
 
