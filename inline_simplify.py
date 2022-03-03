@@ -754,13 +754,59 @@ def test_failing_case_1():
                 assert i.ancestry[0].left == 0
                 assert i.ancestry[0].right == 1
 
+                found4 = False
+                found6 = False
+                for child, segments in i.children.items():
+                    if child.index == 4:
+                        assert Segment(0, 1, None) in segments
+                        found4 = True
+                    elif child.index == 6:
+                        assert Segment(0, 1, None) in segments
+                        found6 = True
+                    elif child.index == i.index:
+                        pass
+                    else:
+                        assert False, f"{child}"
+
+                assert found4 is True
+                assert found6 is True
+
             if i.index == 3:
+                i.print_state()
                 assert len(i.ancestry) == 3
                 segs = [(0, 1), (1, 4), (4, 5)]
                 for a, s in zip(i.ancestry, segs):
                     assert a.left == s[0]
                     assert a.right == s[1]
                     assert a.child is i
+
+                found5 = False
+                found6 = False
+                found7 = False
+                for child, segments in i.children.items():
+                    if child.index == 5:
+                        assert Segment(0, 1, None) in segments
+                        assert Segment(1, 4, None) in segments
+                        assert Segment(4, 5, None) in segments
+                        found5 = True
+                    elif child.index == 7:
+                        assert Segment(0, 1, None) in segments
+                        assert Segment(1, 4, None) in segments
+                        assert Segment(4, 5, None) in segments
+                        found7 = True
+                    elif child.index == 6:
+                        assert Segment(1, 4, None) in segments
+                        assert Segment(4, 5, None) in segments
+                        found6 = True
+                    elif child.index == i.index:
+                        pass
+                    else:
+                        pass
+                        assert False, f"{child}"
+
+                assert found5 is True, "A"
+                assert found6 is True, "B"
+                assert found7 is True, "C"
 
 
 def test_failing_case_2():
