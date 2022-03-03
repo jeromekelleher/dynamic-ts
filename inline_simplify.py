@@ -401,10 +401,28 @@ class Simulator(object):
             if self.rng.random() < self.death_proba:
                 left_parent = self.rng.choice(self.population)
                 right_parent = self.rng.choice(self.population)
+                left_parent_index = -1
+                for k in range(self.population_size):
+                    if left_parent is self.population[k]:
+                        left_parent_index = k
+                        break
+                right_parent_index = -1
+                for k in range(self.population_size):
+                    if right_parent is self.population[k]:
+                        right_parent_index = k
+                        break
                 # Using integers here just to make debugging easier
                 x = self.rng.randint(1, self.sequence_length - 1)
                 assert 0 < x < self.sequence_length
-                print("BIRTH:", left_parent, right_parent, j, x)
+                print(
+                    "BIRTH:",
+                    left_parent,
+                    left_parent_index,
+                    right_parent,
+                    right_parent_index,
+                    j,
+                    x,
+                )
                 child = Individual(self.time)
                 child.ancestry = [Segment(0, self.sequence_length, child)]
                 replacements.append((j, child))
@@ -818,3 +836,30 @@ def test_failing_case_2_subtree():
         assert len(i.parents) == len(parent_indexes[i.index]), f"{i} -> {i.parents}"
         for p in i.parents:
             assert p.index in parent_indexes[i.index]
+
+
+def test_failing_case_1_next_generation():
+    L = 5
+    pop = failing_case_1()
+
+    replacements = []
+    x = [1, 1, 2, 4]  # xover positions
+    parents = [(2, 1), (0, 0), (0, 3), (0, 1)]
+    for i in range(4):
+        child = Individual(2)
+        child.ancestry.append(Segment(0, L, child))
+        record_inheritance(0, x[i], pop[parents[i][0]], child)
+        record_inheritance(x[i], L, pop[parents[i][1]], child)
+        replacements.append((i, child))
+    for j, ind in replacements:
+        dead = pop[j]
+        dead.is_alive = False
+        # NOTE: EXPERIMENTAL
+        dead.remove_sample_mapping(sequence_length=L)
+        propagate_upwards(dead)
+        pop[j] = ind
+
+    for _, ind in replacements:
+        # print("replacement")
+        # ind.print_state()
+        propagate_upwards(ind, True)
