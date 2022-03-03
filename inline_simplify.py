@@ -466,7 +466,9 @@ class Simulator(object):
                 individuals.add(ind)
                 for parent in ind.parents:
                     if parent not in individuals:
-                        print(f"REACHING: parent {parent.index} is reachable via {ind.index}")
+                        print(
+                            f"REACHING: parent {parent.index} is reachable via {ind.index}"
+                        )
                         stack.append(parent)
         return individuals
 
@@ -732,6 +734,57 @@ def test_failing_case_2():
     #     print("CHILDREN")
     #     for j in i.children:
     #         j.print_state()
+
+    for i in individuals:
+        assert len(i.parents) == len(parent_indexes[i.index]), f"{i} -> {i.parents}"
+        for p in i.parents:
+            assert p.index in parent_indexes[i.index]
+
+
+def test_failing_case_2_subtree():
+    """
+    The "problem" involves node 0 and its 2 offspring.
+    """
+    pop = []
+    L = 5
+    Individual._next_index = 0
+    for i in range(4):
+        parent = Individual(0, is_alive=False)
+        assert parent.index == i
+        pop.append(parent)
+
+    replacements = []
+    x = [1, 3, 4, 3]  # xover positions
+    parents = [(0, 0), (1, 2), (0, 1), (2, 3)]
+    for i in range(4):
+        child = Individual(1)
+        child.ancestry.append(Segment(0, L, child))
+        p1 = False
+        p2 = False
+        if parents[i][0] == 0 or parents[i][0] == 1:
+            p1 = True
+        if parents[i][1] == 0 or parents[i][1] == 1:
+            p2 = True
+        if parents[i][0] == 0 or parents[i][1] == 0:
+            record_inheritance(0, x[i], pop[parents[i][0]], child)
+            record_inheritance(x[i], L, pop[parents[i][1]], child)
+        replacements.append((i, child))
+    for j, ind in replacements:
+        dead = pop[j]
+        dead.is_alive = False
+        # NOTE: EXPERIMENTAL
+        dead.remove_sample_mapping(sequence_length=L)
+        propagate_upwards(dead)
+        pop[j] = ind
+
+    for _, ind in replacements:
+        # print("replacement")
+        # ind.print_state()
+        propagate_upwards(ind, True)
+
+    individuals = collect_unique_individuals(pop)
+
+    parent_indexes = [(), (), (), (), (0,), (), (0,), ()]
 
     for i in individuals:
         assert len(i.parents) == len(parent_indexes[i.index]), f"{i} -> {i.parents}"
