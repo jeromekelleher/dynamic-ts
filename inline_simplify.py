@@ -404,7 +404,7 @@ class Simulator(object):
                 # Using integers here just to make debugging easier
                 x = self.rng.randint(1, self.sequence_length - 1)
                 assert 0 < x < self.sequence_length
-                print(left_parent, right_parent, j, x)
+                print("BIRTH:", left_parent, right_parent, j, x)
                 child = Individual(self.time)
                 child.ancestry = [Segment(0, self.sequence_length, child)]
                 replacements.append((j, child))
