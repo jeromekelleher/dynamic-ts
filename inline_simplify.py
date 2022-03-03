@@ -237,7 +237,6 @@ class Individual(object):
                 mapped_ind = X[0].child
                 print(self, "unary", left, right, mapped_ind)
                 if self in mapped_ind.parents:
-                    print(f"Removing parent {self.index} from child {mapped_ind.index}")
                     if self.index == 0:
                         print(self.ancestry)
 
@@ -258,6 +257,9 @@ class Individual(object):
                                 break
 
                     if not non_overlapping_edges_exist:
+                        print(
+                            f"Removing parent {self.index} from child {mapped_ind.index}"
+                        )
                         mapped_ind.parents.remove(self)
                     else:
                         assert self in mapped_ind.parents
