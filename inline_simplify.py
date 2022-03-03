@@ -244,7 +244,7 @@ class Individual(object):
             else:
                 mapped_ind = self
                 for x in X:
-                    print("adding", self, x.child, left, right)
+                    print("adding edge to", self, ":", x.child, left, right)
                     print(f"parents of {x.child} -> {x.child.parents}")
                     self.add_child_segment(x.child, left, right)
                     # assert self in x.child.parents
@@ -252,14 +252,14 @@ class Individual(object):
                     # effect of incorrect logic in the propagation
                     # steps.
                     # NOTE: this is actually WRONG in general,
-                    # as it leads to long-term retengion of unary nodes.
+                    # as it leads to long-term retention of unary nodes.
                     # x.child.parents.add(self)
                 assert_non_overlapping(self.children[mapped_ind])
             # If an individual is alive it always has ancestry over the
             # full segment, so we don't overwrite this.
             if not self.is_alive:
                 seg = Segment(left, right, mapped_ind)
-                print(f"Adding {seg} to {self.ancestry} of {self.index}")
+                print(f"Adding ancestry {seg} to {self.ancestry} of {self.index}")
                 new_segment = True
                 for i in self.ancestry:
                     if i.right > seg.left and seg.right > i.left:
@@ -771,6 +771,8 @@ def test_failing_case_2_subtree():
             record_inheritance(0, x[i], pop[parents[i][0]], child)
             record_inheritance(x[i], L, pop[parents[i][1]], child)
         replacements.append((i, child))
+
+    print("propagate deaths")
     for j, ind in replacements:
         dead = pop[j]
         dead.is_alive = False
@@ -779,6 +781,7 @@ def test_failing_case_2_subtree():
         propagate_upwards(dead)
         pop[j] = ind
 
+    print("propagate replacements")
     for _, ind in replacements:
         # print("replacement")
         # ind.print_state()
