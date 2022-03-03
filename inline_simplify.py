@@ -744,6 +744,8 @@ def test_failing_case_2():
 def test_failing_case_2_subtree():
     """
     The "problem" involves node 0 and its 2 offspring.
+
+    This test only records inheritances from 0 to the 2 offspring.
     """
     pop = []
     L = 5
