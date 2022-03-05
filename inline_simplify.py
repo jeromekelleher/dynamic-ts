@@ -256,6 +256,10 @@ class Individual(object):
                                 non_overlapping_edges_exist = True
                                 break
 
+                    # NOTE: Thi is in the wrong place.
+                    # all of this need to to at the END 
+                    # of this function, after we have processed
+                    # coalescences and updated ancestry segs
                     if not non_overlapping_edges_exist:
                         print(
                             f"Removing parent {self.index} from child {mapped_ind.index}"
