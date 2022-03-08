@@ -257,7 +257,7 @@ class Individual(object):
                                 break
 
                     # NOTE: Thi is in the wrong place.
-                    # all of this need to to at the END 
+                    # all of this need to to at the END
                     # of this function, after we have processed
                     # coalescences and updated ancestry segs
                     if not non_overlapping_edges_exist:
