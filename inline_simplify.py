@@ -220,6 +220,11 @@ class Individual(object):
         S = self.intersecting_ancestry()
         # for child in self.children.keys():
         #     child.parents.remove(self)
+
+        # We want to track the children of
+        # unary edges
+        unary_mapped_ind = []
+
         self.children.clear()
 
         # NOTE: this is a trivial, but undesirable
@@ -228,45 +233,44 @@ class Individual(object):
         # if not self.is_alive:
         #     self.ancestry.clear()
 
-        ancestry_i = 0
-
         for left, right, X in overlapping_segments(S):
             # print(left, right, X)
             if len(X) == 1:
                 # print("unary")
                 mapped_ind = X[0].child
-                print(self, "unary", left, right, mapped_ind)
-                if self in mapped_ind.parents:
-                    if self.index == 0:
-                        print(self.ancestry)
+                unary_mapped_ind.append(mapped_ind)
+                # print(self, "unary", left, right, mapped_ind)
+                # if self in mapped_ind.parents:
+                #    if self.index == 0:
+                #        print(self.ancestry)
 
-                    # This is only correct for THIS SEGMENT
-                    # but is wrong in general.
-                    # The "failing_case_2" is an example
-                    # of where this is removed, but there
-                    # are other, non-overlapping segs existing as edges
-                    # mapped_ind.parents.remove(self)
+                #    # This is only correct for THIS SEGMENT
+                #    # but is wrong in general.
+                #    # The "failing_case_2" is an example
+                #    # of where this is removed, but there
+                #    # are other, non-overlapping segs existing as edges
+                #    # mapped_ind.parents.remove(self)
 
-                    # Remove the parent i.f.f there
-                    # are no other edges mapping to this same child
-                    non_overlapping_edges_exist = False
-                    if mapped_ind in self.children:
-                        for seg in self.children[mapped_ind]:
-                            if not (seg.right > X[0].left and X[0].right > seg.left):
-                                non_overlapping_edges_exist = True
-                                break
+                #    # Remove the parent i.f.f there
+                #    # are no other edges mapping to this same child
+                #    non_overlapping_edges_exist = False
+                #    if mapped_ind in self.children:
+                #        for seg in self.children[mapped_ind]:
+                #            if not (seg.right > X[0].left and X[0].right > seg.left):
+                #                non_overlapping_edges_exist = True
+                #                break
 
-                    # NOTE: Thi is in the wrong place.
-                    # all of this need to to at the END
-                    # of this function, after we have processed
-                    # coalescences and updated ancestry segs
-                    if not non_overlapping_edges_exist:
-                        print(
-                            f"Removing parent {self.index} from child {mapped_ind.index}"
-                        )
-                        mapped_ind.parents.remove(self)
-                    else:
-                        assert self in mapped_ind.parents
+                #    # NOTE: Thi is in the wrong place.
+                #    # all of this need to to at the END
+                #    # of this function, after we have processed
+                #    # coalescences and updated ancestry segs
+                #    if not non_overlapping_edges_exist:
+                #        print(
+                #            f"Removing parent {self.index} from child {mapped_ind.index}"
+                #        )
+                #        mapped_ind.parents.remove(self)
+                #    else:
+                #        assert self in mapped_ind.parents
 
             else:
                 mapped_ind = self
@@ -274,6 +278,9 @@ class Individual(object):
                     print("adding edge to", self, ":", x.child, left, right)
                     print(f"parents of {x.child} -> {x.child.parents}")
                     self.add_child_segment(x.child, left, right)
+                    if self not in x.child.parents:
+                        # TODO: does this lead to unary node retention?
+                        x.child.parents.add(self)
                     # assert self in x.child.parents
                     # NOTE: the "need" for this may be a side
                     # effect of incorrect logic in the propagation
@@ -293,6 +300,16 @@ class Individual(object):
                         new_segment = False
                 if new_segment:
                     self.ancestry.append(seg)
+
+            # If children of unary edges
+            # are not also involved in coalescences,
+            # remove self from their list of parents
+            for um in unary_mapped_ind:
+                if um not in self.children:
+                    assert um is not self
+                    if self in um.parents:
+                        um.parents.remove(self)
+
                 # TODO: figure out how/why we are trying
                 # to put redundant segs into self.ancestry.
                 # NOTE: what is happening here is that
