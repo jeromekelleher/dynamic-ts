@@ -218,12 +218,6 @@ class Individual(object):
         # FIXME: (??) -- the second time we simplify,
         # the existing ancestry is already "full"...
         S = self.intersecting_ancestry()
-        # for child in self.children.keys():
-        #     child.parents.remove(self)
-
-        # We want to track the children of
-        # unary edges
-        # unary_mapped_ind = []
 
         self.children.clear()
 
