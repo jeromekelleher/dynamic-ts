@@ -232,7 +232,10 @@ class Individual(object):
                 mapped_ind = X[0].child
                 # unary_mapped_ind.append(mapped_ind)
                 if self in mapped_ind.parents:
-                    mapped_ind.parents.remove(self)
+                    # need to guard against unary
+                    # edges to the right of coalescences
+                    if mapped_ind not in self.children:
+                        mapped_ind.parents.remove(self)
             else:
                 mapped_ind = self
                 for x in X:
