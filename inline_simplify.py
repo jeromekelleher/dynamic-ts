@@ -219,6 +219,20 @@ class Individual(object):
         # the existing ancestry is already "full"...
         S = self.intersecting_ancestry()
 
+        print(f"START {self.index}")
+        print(f"S = {S}")
+        self.print_state()
+
+        for a in self.ancestry:
+            if self in a.child.parents:
+                a.child.parents.remove(self)
+            if not self.is_alive:
+                a.child = None
+
+        for c in self.children.keys():
+            if self in c.parents:
+                c.parents.remove(self)
+
         self.children.clear()
 
         output_ancestry_child = [None for _ in self.ancestry]
@@ -239,12 +253,12 @@ class Individual(object):
             else:
                 mapped_ind = self
                 for x in X:
-                    print("adding edge to", self, ":", x.child, left, right)
-                    print(f"parents of {x.child} -> {x.child.parents}")
+                    # print("adding edge to", self, ":", x.child, left, right)
+                    # print(f"parents of {x.child} -> {x.child.parents}")
                     self.add_child_segment(x.child, left, right)
                     if self not in x.child.parents:
                         # TODO: does this lead to unary node retention?
-                        print(f"adding {self} to parents of {x.child}")
+                        # print(f"adding {self} to parents of {x.child}")
                         x.child.parents.add(self)
                 assert_non_overlapping(self.children[mapped_ind])
             # If an individual is alive it always has ancestry over the
@@ -261,28 +275,14 @@ class Individual(object):
                         new_segment = False
                 if new_segment:
                     self.ancestry.append(seg)
-                # while ancestry_index < ancestry_len:
-                #    if self.ancestry[ancestry_index].left >= seg.left:
-                #        break
-                #    else:
-                #        ancestry_index += 1
 
-                # print(ancestry_index, ancestry_len, seg, self.ancestry)
+        if not self.is_alive:
+            self.ancestry = sorted(
+                [i for i in self.ancestry if i.child is not None], key=lambda x: x.left
+            )
 
-                # if ancestry_index < ancestry_len:
-                #    i = self.ancestry[ancestry_index]
-                #    if i.right > seg.left and seg.right > i.left:
-                #        new_segment = False
-                #        i.left = max(i.left, seg.left)
-                #        i.right = min(i.right, seg.right)
-                # if new_segment:
-                #    self.ancestry.append(seg)
+        assert_non_overlapping(self.ancestry)
 
-            print("final ancestry =", self.ancestry)
-
-            self.ancestry = sorted(self.ancestry, key=lambda x: x.left)
-
-            assert_non_overlapping(self.ancestry)
         if not self.is_alive:
             for c in self.children:
                 if c is not self:
@@ -290,6 +290,9 @@ class Individual(object):
         for a in self.ancestry:
             if a.child in self.children and a.child is not self:
                 assert self in a.child.parents, f"{self} {a} {self.ancestry}"
+        print("DONE")
+        self.print_state()
+        print("OUT")
 
 
 class Simulator(object):
@@ -328,15 +331,15 @@ class Simulator(object):
                 # Using integers here just to make debugging easier
                 x = self.rng.randint(1, self.sequence_length - 1)
                 assert 0 < x < self.sequence_length
-                print(
-                    "BIRTH:",
-                    left_parent,
-                    left_parent_index,
-                    right_parent,
-                    right_parent_index,
-                    j,
-                    x,
-                )
+                # print(
+                #     "BIRTH:",
+                #     left_parent,
+                #     left_parent_index,
+                #     right_parent,
+                #     right_parent_index,
+                #     j,
+                #     x,
+                # )
                 child = Individual(self.time)
                 child.ancestry = [Segment(0, self.sequence_length, child)]
                 replacements.append((j, child))
@@ -344,7 +347,7 @@ class Simulator(object):
                 record_inheritance(x, self.sequence_length, right_parent, child)
 
         # First propagate the loss of the ancestral material from the newly dead
-        print("pdead")
+        # print("pdead")
         for j, ind in replacements:
             # print("replacement")
             # ind.print_state()
@@ -363,7 +366,7 @@ class Simulator(object):
             self.population[j] = ind
         # print("done")
         # Now propagate the gain in the ancestral material from the children upwards.
-        print("prepl")
+        # print("prepl")
         for _, ind in replacements:
             # print("replacement")
             # ind.print_state()
@@ -376,8 +379,8 @@ class Simulator(object):
     def check_state(self):
         reachable = self.all_reachable()
         for ind in reachable:
-            print(f"REACHABLE: {ind.index}")
-            ind.print_state()
+            # print(f"REACHABLE: {ind.index}")
+            # ind.print_state()
             # print("reachable individiual:")
             # ind.print_state()
             if ind.is_alive:
@@ -425,9 +428,9 @@ class Simulator(object):
                 individuals.add(ind)
                 for parent in ind.parents:
                     if parent not in individuals:
-                        print(
-                            f"REACHING: parent {parent.index} is reachable via {ind.index}"
-                        )
+                        # print(
+                        #     f"REACHING: parent {parent.index} is reachable via {ind.index}"
+                        # )
                         stack.append(parent)
         return individuals
 
@@ -476,20 +479,6 @@ def main():
     sim.run(2)
     ts = sim.export()
     print(ts.draw_text())
-
-    stack = [sim.population[0]]
-    while len(stack) > 0:
-        ind = stack.pop()
-        if ind.index == 21:
-            ind.print_state()
-            print("the parents of 21")
-            for p in ind.parents:
-                p.print_state()
-            break
-        for p in ind.parents:
-            stack.append(p)
-    # ts_simplify = ts.simplify()
-    # print(ts_simplify.draw_text())
 
 
 if __name__ == "__main__":
