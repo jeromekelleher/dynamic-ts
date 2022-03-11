@@ -223,7 +223,7 @@ class Individual(object):
 
         # We want to track the children of
         # unary edges
-        unary_mapped_ind = []
+        # unary_mapped_ind = []
 
         self.children.clear()
 
@@ -238,7 +238,9 @@ class Individual(object):
             if len(X) == 1:
                 # print("unary")
                 mapped_ind = X[0].child
-                unary_mapped_ind.append(mapped_ind)
+                # unary_mapped_ind.append(mapped_ind)
+                if self in mapped_ind.parents:
+                    mapped_ind.parents.remove(self)
                 # print(self, "unary", left, right, mapped_ind)
                 # if self in mapped_ind.parents:
                 #    if self.index == 0:
@@ -304,11 +306,11 @@ class Individual(object):
             # If children of unary edges
             # are not also involved in coalescences,
             # remove self from their list of parents
-            for um in unary_mapped_ind:
-                if um not in self.children:
-                    assert um is not self
-                    if self in um.parents:
-                        um.parents.remove(self)
+            # for um in unary_mapped_ind:
+            #     if um not in self.children:
+            #         assert um is not self
+            #         if self in um.parents:
+            #             um.parents.remove(self)
 
             assert_non_overlapping(self.ancestry)
 
