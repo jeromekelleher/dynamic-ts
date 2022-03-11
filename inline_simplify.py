@@ -378,7 +378,8 @@ class Simulator(object):
             else:
                 assert_non_overlapping(ind.ancestry)
             for child, segments in ind.children.items():
-                assert child in reachable
+                if child is not ind:
+                    assert child in reachable, f"{child} {ind} {ind.children}"
                 assert_non_overlapping(segments)
                 # FIXME: WHY/HOW are we getting self added
                 # as child of self?
