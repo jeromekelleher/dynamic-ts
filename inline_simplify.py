@@ -244,6 +244,7 @@ class Individual(object):
                     self.add_child_segment(x.child, left, right)
                     if self not in x.child.parents:
                         # TODO: does this lead to unary node retention?
+                        print(f"adding {self} to parents of {x.child}")
                         x.child.parents.add(self)
                 assert_non_overlapping(self.children[mapped_ind])
             # If an individual is alive it always has ancestry over the
@@ -282,6 +283,13 @@ class Individual(object):
             self.ancestry = sorted(self.ancestry, key=lambda x: x.left)
 
             assert_non_overlapping(self.ancestry)
+        if not self.is_alive:
+            for c in self.children:
+                if c is not self:
+                    assert self in c.parents, f"{self} {c} {self.ancestry}"
+        for a in self.ancestry:
+            if a.child in self.children and a.child is not self:
+                assert self in a.child.parents, f"{self} {a} {self.ancestry}"
 
 
 class Simulator(object):
