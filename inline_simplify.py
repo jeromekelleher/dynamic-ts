@@ -363,7 +363,8 @@ class Simulator(object):
         #     ind.print_state()
 
     def check_state(self):
-        for ind in self.all_reachable():
+        reachable = self.all_reachable()
+        for ind in reachable:
             print(f"REACHABLE: {ind.index}")
             ind.print_state()
             # print("reachable individiual:")
@@ -377,12 +378,14 @@ class Simulator(object):
             else:
                 assert_non_overlapping(ind.ancestry)
             for child, segments in ind.children.items():
+                assert child in reachable
                 assert_non_overlapping(segments)
                 # FIXME: WHY/HOW are we getting self added
                 # as child of self?
                 if child is not ind:
                     assert ind in child.parents, f"{ind} {child}"
             for parent in ind.parents:
+                assert parent in reachable
                 if ind not in parent.children:
                     print("the failing parent is")
                     parent.print_state()
