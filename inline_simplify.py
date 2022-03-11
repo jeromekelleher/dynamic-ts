@@ -221,6 +221,10 @@ class Individual(object):
 
         self.children.clear()
 
+        output_ancestry_child = [None for _ in self.ancestry]
+        ancestry_index = 0
+        ancestry_len = len(self.ancestry)
+
         for left, right, X in overlapping_segments(S):
             # print(left, right, X)
             if len(X) == 1:
@@ -243,13 +247,33 @@ class Individual(object):
             # full segment, so we don't overwrite this.
             if not self.is_alive:
                 seg = Segment(left, right, mapped_ind)
-                print(f"Adding ancestry {seg} to {self.ancestry} of {self.index}")
+                # print(f"Adding ancestry {seg} to {self.ancestry} of {self.index}")
                 new_segment = True
-                for i in self.ancestry:
+                # for i in self.ancestry:
+                #    if i.right > seg.left and seg.right > i.left:
+                #        new_segment = False
+                # if new_segment:
+                #    self.ancestry.append(seg)
+                while ancestry_index < ancestry_len:
+                    if self.ancestry[ancestry_index].left >= seg.left:
+                        break
+                    else:
+                        ancestry_index += 1
+
+                print(ancestry_index, ancestry_len, seg, self.ancestry)
+
+                if ancestry_index < ancestry_len:
+                    i = self.ancestry[ancestry_index]
                     if i.right > seg.left and seg.right > i.left:
                         new_segment = False
+                        i.left = max(i.left, seg.left)
+                        i.right = min(i.right, seg.right)
                 if new_segment:
                     self.ancestry.append(seg)
+
+            print("final ancestry =", self.ancestry)
+
+            self.ancestry = sorted(self.ancestry, key=lambda x: x.left)
 
             assert_non_overlapping(self.ancestry)
 
