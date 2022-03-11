@@ -223,11 +223,19 @@ class Individual(object):
         # the current setup is failing
         # because we are not successfully
         # demoting the individual with index=6
-        # to a unary node with respect to 
+        # to a unary node with respect to
         # the ancestry ot individual with index=1
+
+        # The problem seems to be something like this:
+        # simplifying 6 leaves it with all unary
+        # ancestry AND NO CHILDREN.
+        # But, we do not currently have a mechanism
+        # to "prune" it from the graph
 
         print(f"START {self.index}")
         print(f"S = {S}")
+        for c in self.children.keys():
+            print(f"child {c} has ancestry {c.ancestry}")
         self.print_state()
 
         for a in self.ancestry:
@@ -238,6 +246,7 @@ class Individual(object):
 
         for c in self.children.keys():
             if self in c.parents:
+                print(f"removing self from {c}")
                 c.parents.remove(self)
 
         self.children.clear()
