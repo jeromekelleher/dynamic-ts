@@ -219,6 +219,13 @@ class Individual(object):
         # the existing ancestry is already "full"...
         S = self.intersecting_ancestry()
 
+        # FIXME:
+        # the current setup is failing
+        # because we are not successfully
+        # demoting the individual with index=6
+        # to a unary node with respect to 
+        # the ancestry ot individual with index=1
+
         print(f"START {self.index}")
         print(f"S = {S}")
         self.print_state()
