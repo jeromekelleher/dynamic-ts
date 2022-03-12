@@ -273,11 +273,17 @@ class Individual(object):
                     # print("adding edge to", self, ":", x.child, left, right)
                     # print(f"parents of {x.child} -> {x.child.parents}")
                     if len(x.child.children) > 0 or x.child.is_alive:
+                        for a in x.child.ancestry:
+                            if a.right > left and right > a.left:
+                                if a.child is not x.child:
+                                    # NOTE: TODO: FIXME: AHA?!?!?!?
+                                    print("COAL TO A UNARY SEGMENT", self,"->",x.child, a.child, left, right, a.left, a.right)
                         output_mappings.add(x.child)
                         self.add_child_segment(x.child, left, right)
                         if self not in x.child.parents:
                             x.child.parents.add(self)
                     else:
+                        print("TRAVERSING DOWN A UNARY", x.child)
                         # FIXME: we can have unary -> unary -> etc., here,
                         # which isn't being handled.  Essentially, this means
                         # that we are not doing a proper job sending ancestry "up"
@@ -289,8 +295,8 @@ class Individual(object):
                                 self.add_child_segment(
                                     a.child, max(left, a.left), min(right, a.right)
                                 )
-                                if self not in a.child.parents:
-                                    a.child.parents.add(self)
+                                assert a.child in self.children
+                                a.child.parents.add(self)
                                 output_mappings.add(a.child)
                                 break
                 if len(output_mappings) > 1:
