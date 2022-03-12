@@ -278,6 +278,9 @@ class Individual(object):
                                 if a.child is not x.child:
                                     # NOTE: TODO: FIXME: AHA?!?!?!?
                                     print("COAL TO A UNARY SEGMENT", self,"->",x.child, a.child, left, right, a.left, a.right)
+                                    x.left = max(left, a.left)
+                                    x.right = min(right, a.right)
+                                    x.child = a.child
                         output_mappings.add(x.child)
                         self.add_child_segment(x.child, left, right)
                         if self not in x.child.parents:
