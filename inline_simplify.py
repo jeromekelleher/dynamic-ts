@@ -454,7 +454,7 @@ class Simulator(object):
                     print("the failing parent is")
                     parent.print_state()
                     print("done w/failing parent")
-                assert ind in parent.children
+                assert ind in parent.children, f"{ind} {parent}"
 
     def run(self, num_generations, simplify_interval=1):
         for _ in range(num_generations):
@@ -525,7 +525,7 @@ def main():
     sim = Simulator(4, 5, death_proba=1.0, seed=seed)
     # works for 1 generation...
     # sim.run(1)
-    sim.run(2)
+    sim.run(4)
     ts = sim.export()
     print(ts.draw_text())
 
