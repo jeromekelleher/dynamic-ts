@@ -238,16 +238,16 @@ class Individual(object):
             print(f"child {c} has ancestry {c.ancestry}")
         self.print_state()
 
-        for a in self.ancestry:
-            if self in a.child.parents:
-                a.child.parents.remove(self)
-            if not self.is_alive:
-                a.child = None
+        # for a in self.ancestry:
+        #     if self in a.child.parents:
+        #         a.child.parents.remove(self)
+        #     if not self.is_alive:
+        #         a.child = None
 
-        for c in self.children.keys():
-            if self in c.parents:
-                print(f"removing self from {c}")
-                c.parents.remove(self)
+        # for c in self.children.keys():
+        #     if self in c.parents:
+        #         print(f"removing self from {c}")
+        #         c.parents.remove(self)
 
         self.children.clear()
 
