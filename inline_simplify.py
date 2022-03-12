@@ -267,15 +267,33 @@ class Individual(object):
                     if mapped_ind not in self.children:
                         mapped_ind.parents.remove(self)
             else:
-                mapped_ind = self
+                output_mappings = set()
+                # mapped_ind = self
                 for x in X:
                     # print("adding edge to", self, ":", x.child, left, right)
                     # print(f"parents of {x.child} -> {x.child.parents}")
-                    self.add_child_segment(x.child, left, right)
-                    if self not in x.child.parents:
-                        # TODO: does this lead to unary node retention?
-                        # print(f"adding {self} to parents of {x.child}")
-                        x.child.parents.add(self)
+                    if len(x.child.children) > 0 or x.child.is_alive:
+                        output_mappings.add(x.child)
+                        self.add_child_segment(x.child, left, right)
+                        if self not in x.child.parents:
+                            x.child.parents.add(self)
+                    else:
+                        # We have an overlap with an Individual that
+                        # we know only passes on unary fragments
+                        for a in x.child.ancestry:
+                            if a.right > left and right > a.left:
+                                self.add_child_segment(
+                                    a.child, max(left, a.left), min(right, a.right)
+                                )
+                                if self not in a.child.parents:
+                                    a.child.parents.add(self)
+                                output_mappings.add(a.child)
+                                break
+                if len(output_mappings) > 1:
+                    mapped_ind = self
+                else:
+                    assert len(output_mappings) == 1
+                    mapped_ind = [output_mappings.pop()]
                 assert_non_overlapping(self.children[mapped_ind])
             # If an individual is alive it always has ancestry over the
             # full segment, so we don't overwrite this.
