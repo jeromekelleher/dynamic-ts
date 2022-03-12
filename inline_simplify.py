@@ -378,6 +378,7 @@ class Simulator(object):
             dead.is_alive = False
             # NOTE: EXPERIMENTAL
             dead.remove_sample_mapping(sequence_length=self.sequence_length)
+            print(f"propagating death {dead}")
             propagate_upwards(dead)
             self.population[j] = ind
         # print("done")
@@ -386,6 +387,7 @@ class Simulator(object):
         for _, ind in replacements:
             # print("replacement")
             # ind.print_state()
+            print(f"propagating birth {ind}")
             propagate_upwards(ind, True)
         self.check_state()
 
