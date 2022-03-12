@@ -278,6 +278,10 @@ class Individual(object):
                         if self not in x.child.parents:
                             x.child.parents.add(self)
                     else:
+                        # FIXME: we can have unary -> unary -> etc., here,
+                        # which isn't being handled.  Essentially, this means
+                        # that we are not doing a proper job sending ancestry "up"
+                        # the graph in the first place.
                         # We have an overlap with an Individual that
                         # we know only passes on unary fragments
                         for a in x.child.ancestry:
