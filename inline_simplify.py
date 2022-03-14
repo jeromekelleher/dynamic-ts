@@ -284,7 +284,11 @@ class Individual(object):
                 else:
                     assert len(output_mappings) == 1
                     mapped_ind = [output_mappings.pop()]
-                assert_non_overlapping(self.children[mapped_ind])
+                if mapped_ind in self.children:
+                    # FIXME: this is a really annoyting gotcha:
+                    # the defaultdict(list) adds [] to self.children
+                    # if it does not exist
+                    assert_non_overlapping(self.children[mapped_ind])
             # If an individual is alive it always has ancestry over the
             # full segment, so we don't overwrite this.
             if not self.is_alive:
