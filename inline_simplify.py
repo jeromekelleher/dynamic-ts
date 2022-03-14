@@ -482,7 +482,8 @@ class Simulator(object):
 def main():
     seed = 17
     # sim = Simulator(100, 5, death_proba=1.0, seed=seed)
-    sim = Simulator(4, 5, death_proba=1.0, seed=seed)
+    # sim = Simulator(4, 5, death_proba=1.0, seed=seed)
+    sim = Simulator(4, 5, death_proba=0.5, seed=seed)
     # works for 1 generation...
     # sim.run(1)
     sim.run(50)
