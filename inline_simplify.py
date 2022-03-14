@@ -319,7 +319,7 @@ class Individual(object):
         for c, s in self.children.items():
             if len(s) == 0:
                 # there are no coalescences from parent -> child
-                if self in c.parents and not self.is_alive:
+                if self in c.parents: # and not self.is_alive:
                     c.parents.remove(self)
             else:
                 new_children[c] = s
@@ -488,7 +488,7 @@ def main():
     seed = 17
     # sim = Simulator(100, 5, death_proba=1.0, seed=seed)
     # sim = Simulator(4, 5, death_proba=1.0, seed=seed)
-    sim = Simulator(4, 5, death_proba=0.5, seed=seed)
+    sim = Simulator(4, 5, death_proba=0.9, seed=seed)
     # works for 1 generation...
     # sim.run(1)
     sim.run(50)
