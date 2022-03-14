@@ -345,6 +345,11 @@ class Simulator(object):
         self.time = 1
         self.population = [Individual(self.time) for _ in range(population_size)]
 
+        # Everyone starts out alive, so has to map to self
+        for i in self.population:
+            assert len(i.ancestry) == 0
+            i.ancestry.append(Segment(0, sequence_length, i))
+
     def run_generation(self):
         """
         Implements a single generation.
