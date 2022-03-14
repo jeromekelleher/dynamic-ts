@@ -360,16 +360,16 @@ class Simulator(object):
             if self.rng.random() < self.death_proba:
                 left_parent = self.rng.choice(self.population)
                 right_parent = self.rng.choice(self.population)
-                left_parent_index = -1
-                for k in range(self.population_size):
-                    if left_parent is self.population[k]:
-                        left_parent_index = k
-                        break
-                right_parent_index = -1
-                for k in range(self.population_size):
-                    if right_parent is self.population[k]:
-                        right_parent_index = k
-                        break
+                # left_parent_index = -1
+                # for k in range(self.population_size):
+                #     if left_parent is self.population[k]:
+                #         left_parent_index = k
+                #         break
+                # right_parent_index = -1
+                # for k in range(self.population_size):
+                #     if right_parent is self.population[k]:
+                #         right_parent_index = k
+                #         break
                 # Using integers here just to make debugging easier
                 x = self.rng.randint(1, self.sequence_length - 1)
                 assert 0 < x < self.sequence_length
