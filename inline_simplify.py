@@ -346,6 +346,7 @@ class Simulator(object):
         self.population = [Individual(self.time) for _ in range(population_size)]
 
         # Everyone starts out alive, so has to map to self
+        # (Overlapping generations fails fast if this isn't done)
         for i in self.population:
             assert len(i.ancestry) == 0
             i.ancestry.append(Segment(0, sequence_length, i))
