@@ -249,7 +249,10 @@ class Individual(object):
         #         print(f"removing self from {c}")
         #         c.parents.remove(self)
 
+        input_children = set([i for i in self.children.keys()])
         self.children.clear()
+        # for c, s in self.children.items():
+        #     s.clear()
 
         output_ancestry_child = [None for _ in self.ancestry]
         ancestry_index = 0
@@ -277,7 +280,17 @@ class Individual(object):
                             if a.right > left and right > a.left:
                                 if a.child is not x.child:
                                     # NOTE: TODO: FIXME: AHA?!?!?!?
-                                    print("COAL TO A UNARY SEGMENT", self,"->",x.child, a.child, left, right, a.left, a.right)
+                                    print(
+                                        "COAL TO A UNARY SEGMENT",
+                                        self,
+                                        "->",
+                                        x.child,
+                                        a.child,
+                                        left,
+                                        right,
+                                        a.left,
+                                        a.right,
+                                    )
                                     x.left = max(left, a.left)
                                     x.right = min(right, a.right)
                                     x.child = a.child
@@ -331,9 +344,18 @@ class Individual(object):
         assert_non_overlapping(self.ancestry)
 
         if not self.is_alive:
-            for c in self.children:
+            for c, segments in self.children.items():
                 if c is not self:
-                    assert self in c.parents, f"{self} {c} {self.ancestry}"
+                    print("CHILD = ", c)
+                    if len(segments) > 0:
+                        assert self in c.parents, f"{self} {c} {self.ancestry}"
+                    # else:
+                    #     if self in c.parents:
+                    #         c.parents.remove(self)
+        # self.children = {k:v for k,v in self.children.items() if len(v) > 0}
+        for i in input_children:
+            if i not in self.children and self in i.parents:
+                i.parents.remove(self)
         for a in self.ancestry:
             if a.child in self.children and a.child is not self:
                 assert self in a.child.parents, f"{self} {a} {self.ancestry}"
@@ -525,7 +547,7 @@ def main():
     sim = Simulator(4, 5, death_proba=1.0, seed=seed)
     # works for 1 generation...
     # sim.run(1)
-    sim.run(4)
+    sim.run(10)
     ts = sim.export()
     print(ts.draw_text())
 
