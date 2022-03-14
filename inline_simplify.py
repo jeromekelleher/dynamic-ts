@@ -83,11 +83,8 @@ def propagate_upwards(ind, clear_if_not_alive: bool = False):
     # This isn't working.
     # print("PROPAGATE", ind)
     stack = [ind]
-    last_time = int(np.iinfo(np.uint32).max)
     while len(stack) > 0:
         ind = stack.pop()
-        # assert ind.time <= last_time, f"{ind.time} {last_time}"
-        last_time = ind.time
         # print("\t", ind)
         # ind.print_state()
         # We're visting everything here at the moment, but we don't need to.
