@@ -219,43 +219,20 @@ class Individual(object):
         # the existing ancestry is already "full"...
         S = self.intersecting_ancestry()
 
-        # FIXME:
-        # the current setup is failing
-        # because we are not successfully
-        # demoting the individual with index=6
-        # to a unary node with respect to
-        # the ancestry ot individual with index=1
-
-        # The problem seems to be something like this:
-        # simplifying 6 leaves it with all unary
-        # ancestry AND NO CHILDREN.
-        # But, we do not currently have a mechanism
-        # to "prune" it from the graph
-
         print(f"START {self.index}")
         print(f"S = {S}")
         for c in self.children.keys():
             print(f"child {c} has ancestry {c.ancestry}")
         self.print_state()
 
-        # for a in self.ancestry:
-        #     if self in a.child.parents:
-        #         a.child.parents.remove(self)
-        #     if not self.is_alive:
-        #         a.child = None
-
-        # for c in self.children.keys():
-        #     if self in c.parents:
-        #         print(f"removing self from {c}")
-        #         c.parents.remove(self)
-
-        # self.children.clear()
+        # Do not "bulk" clear: we need to know
+        # if current children are no longer
+        # children when done.
+        # TODO: investigate possibility of
+        # removing self from parents of all children
+        # as an alternative strategy
         for c, s in self.children.items():
             s.clear()
-
-        # output_ancestry_child = [None for _ in self.ancestry]
-        # ancestry_index = 0
-        # ancestry_len = len(self.ancestry)
 
         for left, right, X in overlapping_segments(S):
             # print(left, right, X)
@@ -270,10 +247,7 @@ class Individual(object):
                         mapped_ind.parents.remove(self)
             else:
                 output_mappings = set()
-                # mapped_ind = self
                 for x in X:
-                    # print("adding edge to", self, ":", x.child, left, right)
-                    # print(f"parents of {x.child} -> {x.child.parents}")
                     if len(x.child.children) > 0 or x.child.is_alive:
                         for a in x.child.ancestry:
                             if a.right > left and right > a.left:
@@ -299,12 +273,6 @@ class Individual(object):
                             x.child.parents.add(self)
                     else:
                         print("TRAVERSING DOWN A UNARY", x.child)
-                        # FIXME: we can have unary -> unary -> etc., here,
-                        # which isn't being handled.  Essentially, this means
-                        # that we are not doing a proper job sending ancestry "up"
-                        # the graph in the first place.
-                        # We have an overlap with an Individual that
-                        # we know only passes on unary fragments
                         for a in x.child.ancestry:
                             if a.right > left and right > a.left:
                                 self.add_child_segment(
@@ -324,7 +292,6 @@ class Individual(object):
             # full segment, so we don't overwrite this.
             if not self.is_alive:
                 seg = Segment(left, right, mapped_ind)
-                # print(f"Adding ancestry {seg} to {self.ancestry} of {self.index}")
                 new_segment = True
                 for i in self.ancestry:
                     if i.right > seg.left and seg.right > i.left:
@@ -418,42 +385,20 @@ class Simulator(object):
         # First propagate the loss of the ancestral material from the newly dead
         # print("pdead")
         for j, ind in replacements:
-            # print("replacement")
-            # ind.print_state()
             dead = self.population[j]
-            # NOTE: here, we have a few problems, as far as simulating > 1 generation
-            # is concerned:
-            # 1. If the Individual has an ancestral mapping to self on [0, L),
-            #    that mapping is no longer valid.
-            # 2. We have ancestry already in place for  the next "round" of evolution.
-            #    So we are now in a position where we may are not BUILDING ancestry
-            #    de novo, but rather updating ancestry that is already in memory.
             dead.is_alive = False
-            # NOTE: EXPERIMENTAL
             dead.remove_sample_mapping(sequence_length=self.sequence_length)
             print(f"propagating death {dead}")
             propagate_upwards(dead)
             self.population[j] = ind
-        # print("done")
-        # Now propagate the gain in the ancestral material from the children upwards.
-        # print("prepl")
         for _, ind in replacements:
-            # print("replacement")
-            # ind.print_state()
             print(f"propagating birth {ind}")
             propagate_upwards(ind, True)
         self.check_state()
 
-        # for ind in self.all_reachable():
-        #     ind.print_state()
-
     def check_state(self):
         reachable = self.all_reachable()
         for ind in reachable:
-            # print(f"REACHABLE: {ind.index}")
-            # ind.print_state()
-            # print("reachable individiual:")
-            # ind.print_state()
             if ind.is_alive:
                 assert len(ind.ancestry) == 1
                 x = ind.ancestry[0]
@@ -480,12 +425,7 @@ class Simulator(object):
 
     def run(self, num_generations, simplify_interval=1):
         for _ in range(num_generations):
-            # NOTE: this does not help...
-            # for i in self.population:
-            #     if not i.is_alive:
-            #         i.ancestry.clear()
             self.run_generation()
-            # print(len(self.dead))
 
     def all_reachable(self):
         """
@@ -499,9 +439,6 @@ class Simulator(object):
                 individuals.add(ind)
                 for parent in ind.parents:
                     if parent not in individuals:
-                        # print(
-                        #     f"REACHING: parent {parent.index} is reachable via {ind.index}"
-                        # )
                         stack.append(parent)
         return individuals
 
