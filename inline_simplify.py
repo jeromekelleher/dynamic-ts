@@ -470,6 +470,17 @@ class Simulator(object):
                     rv.append(node_map[j.index])
         return sorted(rv)
 
+    def get_alive_node_indexes_and_times(self) -> List[Tuple[int, int]]:
+        indexes = set()
+        rv = []
+        for i in self.transmissions:
+            for j in [i.parent, i.child]:
+                if j.is_alive and j.index not in indexes:
+                    rv.append((j.index, j.time))
+                    indexes.add(j.index)
+
+        return rv
+
     def convert_transmissions_to_tables(
         self,
     ) -> Tuple[tskit.TableCollection, List[int]]:
@@ -489,12 +500,21 @@ class Simulator(object):
                     node_data[n.index] = n.time
                     max_time = max(max_time, n.time)
 
+        alive_nodes = self.get_alive_node_indexes_and_times()
+
+        max_alive_node_time = max([i[1] for i in alive_nodes])
+
+        assert max_time == max_alive_node_time
+
         node_map = {}
         for i, t in node_data.items():
             x = tables.nodes.add_row(0, -(t - max_time))
             node_map[i] = x
 
         samples = self.make_samples_list_for_tskit(node_map)
+
+        double_check = sorted([node_map[i[0]] for i in alive_nodes])
+        assert samples == double_check, f"{samples} {double_check}"
 
         for t in self.transmissions:
             tables.edges.add_row(
