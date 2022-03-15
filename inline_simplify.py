@@ -213,8 +213,12 @@ class Individual(object):
         return S
 
     def update_ancestry(self, processing_replacements: bool = False):
-        # FIXME: (??) -- the second time we simplify,
-        # the existing ancestry is already "full"...
+        # FIXME: for overlapping generations to work, we need
+        # to take some hints from standard simplification:
+        # We need to clear out the existing ancestry for alive nodes, and
+        # then track the right-most coordinate added into
+        # the new ancestry.  If that value is < L at the end,
+        # we need to fill in the overhang from last_right -> L
         S = self.intersecting_ancestry()
 
         print(f"START {self.index}")
