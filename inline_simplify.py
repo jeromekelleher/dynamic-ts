@@ -239,14 +239,17 @@ class Individual(object):
         for left, right, X in overlapping_segments(S):
             # print(left, right, X)
             if len(X) == 1:
-                # print("unary")
                 mapped_ind = X[0].child
+                print("unary", mapped_ind, X[0])
                 # unary_mapped_ind.append(mapped_ind)
                 if self in mapped_ind.parents:
                     # need to guard against unary
                     # edges to the right of coalescences
+                    print("YES")
                     if mapped_ind not in self.children:
                         mapped_ind.parents.remove(self)
+                    if mapped_ind.is_alive and self.is_alive:
+                        self.add_child_segment(mapped_ind, left, right)
             else:
                 output_mappings = set()
                 for x in X:
@@ -587,7 +590,7 @@ def main():
     sim = Simulator(4, 5, death_proba=0.5, seed=seed)
     # works for 1 generation...
     # sim.run(1)
-    sim.run(1)
+    sim.run(10)
     ts = sim.export()
     print(ts.draw_text())
 
