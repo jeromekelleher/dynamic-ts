@@ -135,10 +135,7 @@ class Individual(object):
     Class representing a single individual that was alive at some time.
     """
 
-    # This is just for debugging
-    _next_index = 0
-
-    def __init__(self, time, is_alive=True):
+    def __init__(self, time, index, is_alive=True):
         self.time = time
         # The direct children segments of this individual. For each unique
         # child, we keep a list of the ancestral segments that it has inherited.
@@ -151,10 +148,12 @@ class Individual(object):
         self.ancestry = []
         # The set of parent Individuals from which this individual has inherited
         # genetic material.
+        # FIXME: this comment is not quite right.  For new births, it is the
+        # parents from which segments are inherited.  For older nodes, it
+        # may or may not refer to parents transmitting unary edges to self.
         self.parents = set()
         self.is_alive = is_alive
-        self.index = Individual._next_index
-        Individual._next_index += 1
+        self.index = index
 
     def __repr__(self):
         return f"Individual(index={self.index}, time={self.time}, is_alive={self.is_alive})"
@@ -343,12 +342,14 @@ class Simulator(object):
         self.death_proba = death_proba
         self.rng = random.Random(seed)
         self.time = 1
-        self.population = [Individual(self.time) for _ in range(population_size)]
+        self.population = [Individual(self.time, i) for i in range(population_size)]
+        self.next_individual_index = population_size
 
         # Everyone starts out alive, so has to map to self
         # (Overlapping generations fails fast if this isn't done)
         for i in self.population:
             assert len(i.ancestry) == 0
+            assert i.index < population_size
             i.ancestry.append(Segment(0, sequence_length, i))
 
     def run_generation(self):
@@ -383,7 +384,8 @@ class Simulator(object):
                 #     j,
                 #     x,
                 # )
-                child = Individual(self.time)
+                child = Individual(self.time, self.next_individual_index)
+                self.next_individual_index += 1
                 child.ancestry = [Segment(0, self.sequence_length, child)]
                 replacements.append((j, child))
                 record_inheritance(0, x, left_parent, child)
@@ -503,8 +505,7 @@ if __name__ == "__main__":
 
 def test_remove_self_mapping():
     L = 5
-    Individual._next_index = 0
-    child = Individual(0, is_alive=True)
+    child = Individual(0, 0, is_alive=True)
     child.ancestry = [Segment(0, L, child)]
     assert len(child.ancestry) == 1
     child.remove_sample_mapping(L)
@@ -517,9 +518,8 @@ def test_basics():
     """
     pop = []
     L = 5
-    Individual._next_index = 0
     for i in range(2):
-        parent = Individual(0, is_alive=False)
+        parent = Individual(0, i, is_alive=False)
         assert parent.index == i
         pop.append(parent)
 
@@ -572,17 +572,19 @@ def failing_case_1():
     # seed = 1, N=4, L=5, using basically Jerome's prototype
     pop = []
     L = 5
-    Individual._next_index = 0
     for i in range(4):
-        parent = Individual(0, is_alive=False)
+        parent = Individual(0, i, is_alive=False)
         assert parent.index == i
         pop.append(parent)
+
+    next_index = len(pop)
 
     replacements = []
     x = [1, 4, 1, 1]  # xover positions
     parents = [(0, 2), (3, 3), (0, 3), (3, 3)]
     for i in range(4):
-        child = Individual(1)
+        child = Individual(1, next_index)
+        next_index += 1
         child.ancestry.append(Segment(0, L, child))
         record_inheritance(0, x[i], pop[parents[i][0]], child)
         record_inheritance(x[i], L, pop[parents[i][1]], child)
@@ -607,17 +609,18 @@ def failing_case_2():
     # seed = 2, N=4, L=5, using basically Jerome's prototype
     pop = []
     L = 5
-    Individual._next_index = 0
     for i in range(4):
-        parent = Individual(0, is_alive=False)
+        parent = Individual(0, i, is_alive=False)
         assert parent.index == i
         pop.append(parent)
+    next_index = len(pop)
 
     replacements = []
     x = [1, 3, 4, 3]  # xover positions
     parents = [(0, 0), (1, 2), (0, 1), (2, 3)]
     for i in range(4):
-        child = Individual(1)
+        child = Individual(1, next_index)
+        next_index += 1
         child.ancestry.append(Segment(0, L, child))
         record_inheritance(0, x[i], pop[parents[i][0]], child)
         record_inheritance(x[i], L, pop[parents[i][1]], child)
@@ -759,17 +762,19 @@ def test_failing_case_2_subtree():
     """
     pop = []
     L = 5
-    Individual._next_index = 0
     for i in range(4):
-        parent = Individual(0, is_alive=False)
+        parent = Individual(0, i, is_alive=False)
         assert parent.index == i
         pop.append(parent)
+
+    next_index = len(pop)
 
     replacements = []
     x = [1, 3, 4, 3]  # xover positions
     parents = [(0, 0), (1, 2), (0, 1), (2, 3)]
     for i in range(4):
-        child = Individual(1)
+        child = Individual(1, next_index)
+        next_index += 1
         child.ancestry.append(Segment(0, L, child))
         p1 = False
         p2 = False
@@ -811,11 +816,14 @@ def test_failing_case_1_next_generation():
     L = 5
     pop = failing_case_1()
 
+    next_index = max([i.index for i in collect_unique_individuals(pop)]) + 1
+
     replacements = []
     x = [1, 1, 2, 4]  # xover positions
     parents = [(2, 1), (0, 0), (0, 3), (0, 1)]
     for i in range(4):
-        child = Individual(2)
+        child = Individual(2, next_index)
+        next_index += 1
         child.ancestry.append(Segment(0, L, child))
         record_inheritance(0, x[i], pop[parents[i][0]], child)
         record_inheritance(x[i], L, pop[parents[i][1]], child)
