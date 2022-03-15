@@ -420,8 +420,7 @@ class Simulator(object):
                 if child is not ind:
                     assert child in reachable, f"{child} {ind} {ind.children}"
                 assert_non_overlapping(segments)
-                # FIXME: WHY/HOW are we getting self added
-                # as child of self?
+                # NOTE: this happens b/c as a side-effect of defaultdict
                 if child is not ind:
                     assert ind in child.parents, f"{ind} {child}"
             for parent in ind.parents:
