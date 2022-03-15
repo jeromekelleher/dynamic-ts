@@ -466,7 +466,7 @@ class Simulator(object):
         rv = []
         for i in self.transmissions:
             for j in [i.parent, i.child]:
-                if j.is_alive:
+                if j.is_alive and j.index not in rv:
                     rv.append(j.index)
         return sorted(rv)
 
@@ -485,11 +485,13 @@ class Simulator(object):
         for i in self.transmissions:
             for n in [i.parent, i.child]:
                 if n.index not in node_data:
-                    n.index = n.time
+                    node_data[n.index] = n.time
+
+        max_time = max([node_data[i] for i in node_data.keys()])
 
         node_map = {}
         for i, t in node_data.items():
-            x = tables.nodes.add_row(0, t)
+            x = tables.nodes.add_row(0, -(t - max_time))
             node_map[i] = x
 
         for t in self.transmissions:
@@ -555,13 +557,20 @@ class Simulator(object):
 def main():
     seed = 17
     # sim = Simulator(100, 5, death_proba=1.0, seed=seed)
-    # sim = Simulator(4, 5, death_proba=1.0, seed=seed)
-    sim = Simulator(4, 5, death_proba=0.5, seed=seed)
+    sim = Simulator(4, 5, death_proba=1.0, seed=seed)
+    # sim = Simulator(4, 5, death_proba=0.5, seed=seed)
     # works for 1 generation...
     # sim.run(1)
-    sim.run(50)
+    sim.run(150)
     ts = sim.export()
     print(ts.draw_text())
+
+    tables, samples = sim.convert_transmissions_to_tables()
+    # print(tables)
+    # print(samples)
+    idmap = tables.simplify(samples)
+    ts_tsk = tables.tree_sequence()
+    print(ts_tsk.draw_text())
 
 
 if __name__ == "__main__":
