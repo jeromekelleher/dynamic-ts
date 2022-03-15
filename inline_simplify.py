@@ -2,10 +2,12 @@
 Prototype forward simulator where we simplify inline, using the Individual
 structures directly.
 """
+from dataclasses import dataclass
 import random
 import collections
 import heapq
 import sys
+from typing import List, Tuple
 
 import numpy as np
 import tskit
@@ -331,6 +333,14 @@ class Individual(object):
         print("OUT")
 
 
+@dataclass
+class TransmissionInfo:
+    parent: Individual
+    child: Individual
+    left: int
+    right: int
+
+
 class Simulator(object):
     """
     Simple Wright-Fisher simulator using standard periodic simplify.
@@ -344,6 +354,7 @@ class Simulator(object):
         self.time = 1
         self.population = [Individual(self.time, i) for i in range(population_size)]
         self.next_individual_index = population_size
+        self.transmissions: List[TransmissionInfo] = []
 
         # Everyone starts out alive, so has to map to self
         # (Overlapping generations fails fast if this isn't done)
@@ -390,6 +401,22 @@ class Simulator(object):
                 replacements.append((j, child))
                 record_inheritance(0, x, left_parent, child)
                 record_inheritance(x, self.sequence_length, right_parent, child)
+                self.transmissions.append(
+                    TransmissionInfo(
+                        left_parent,
+                        child,
+                        0,
+                        x,
+                    )
+                )
+                self.transmissions.append(
+                    TransmissionInfo(
+                        right_parent,
+                        child,
+                        x,
+                        self.sequence_length,
+                    )
+                )
 
         # First propagate the loss of the ancestral material from the newly dead
         # print("pdead")
@@ -423,17 +450,56 @@ class Simulator(object):
                 # NOTE: this happens b/c as a side-effect of defaultdict
                 if child is not ind:
                     assert ind in child.parents, f"{ind} {child}"
-            for parent in ind.parents:
-                assert parent in reachable
-                if ind not in parent.children:
-                    print("the failing parent is")
-                    parent.print_state()
-                    print("done w/failing parent")
-                assert ind in parent.children, f"{ind} {parent}"
+        for parent in ind.parents:
+            assert parent in reachable
+            if ind not in parent.children:
+                print("the failing parent is")
+                parent.print_state()
+                print("done w/failing parent")
+            assert ind in parent.children, f"{ind} {parent}"
 
     def run(self, num_generations, simplify_interval=1):
         for _ in range(num_generations):
             self.run_generation()
+
+    def make_samples_list_for_tskit(self) -> List[int]:
+        rv = []
+        for i in self.transmissions:
+            for j in [i.parent, i.child]:
+                if j.is_alive:
+                    rv.append(j.index)
+        return sorted(rv)
+
+    def convert_transmissions_to_tables(
+        self,
+    ) -> Tuple[tskit.TableCollection, List[int]]:
+        """
+        Take the raw transmission info and make it into
+        an unsimplified TableCollection for an independent
+        look at the simulated topologies.
+        """
+        tables = tskit.TableCollection(self.sequence_length)
+
+        # There's probably a faster way to do all this...
+        node_data = {}
+        for i in self.transmissions:
+            for n in [i.parent, i.child]:
+                if n.index not in node_data:
+                    n.index = n.time
+
+        node_map = {}
+        for i, t in node_data.items():
+            x = tables.nodes.add_row(0, t)
+            node_map[i] = x
+
+        for t in self.transmissions:
+            tables.edges.add_row(
+                t.left, t.right, node_map[t.parent.index], node_map[t.child.index]
+            )
+
+        tables.sort()
+
+        return tables, self.make_samples_list_for_tskit()
 
     def all_reachable(self):
         """
