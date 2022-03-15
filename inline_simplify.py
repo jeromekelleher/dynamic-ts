@@ -523,7 +523,7 @@ class Simulator(object):
 
         tables.sort()
 
-        return tables, samples
+        return tables, samples, node_map
 
     def all_reachable(self):
         """
@@ -587,18 +587,19 @@ def main():
     ts = sim.export()
     print(ts.draw_text())
 
-    tables, samples = sim.convert_transmissions_to_tables()
-    # print(tables)
+    tables, samples, node_map = sim.convert_transmissions_to_tables()
     # print(samples)
     idmap = tables.simplify(samples)
     ts_tsk = tables.tree_sequence()
+
+    node_map = {v: k for k, v in node_map.items()}
 
     # Make node labels which should match what we
     # draw from the new algo.
     node_labels = {}
     for i, j in enumerate(idmap):
         if j != tskit.NULL:
-            node_labels[j] = str(i)
+            node_labels[j] = str(node_map[i])
     print(ts_tsk.draw_text(node_labels=node_labels))
 
 
