@@ -462,12 +462,12 @@ class Simulator(object):
         for _ in range(num_generations):
             self.run_generation()
 
-    def make_samples_list_for_tskit(self) -> List[int]:
+    def make_samples_list_for_tskit(self, node_map) -> List[int]:
         rv = []
         for i in self.transmissions:
             for j in [i.parent, i.child]:
-                if j.is_alive and j.index not in rv:
-                    rv.append(j.index)
+                if j.is_alive and node_map[j.index] not in rv:
+                    rv.append(node_map[j.index])
         return sorted(rv)
 
     def convert_transmissions_to_tables(
@@ -494,6 +494,8 @@ class Simulator(object):
             x = tables.nodes.add_row(0, -(t - max_time))
             node_map[i] = x
 
+        samples = self.make_samples_list_for_tskit(node_map)
+
         for t in self.transmissions:
             tables.edges.add_row(
                 t.left, t.right, node_map[t.parent.index], node_map[t.child.index]
@@ -501,7 +503,7 @@ class Simulator(object):
 
         tables.sort()
 
-        return tables, self.make_samples_list_for_tskit()
+        return tables, samples
 
     def all_reachable(self):
         """
@@ -557,8 +559,8 @@ class Simulator(object):
 def main():
     seed = 17
     # sim = Simulator(100, 5, death_proba=1.0, seed=seed)
-    sim = Simulator(6, 5, death_proba=1.0, seed=seed)
-    # sim = Simulator(4, 5, death_proba=0.5, seed=seed)
+    # sim = Simulator(6, 5, death_proba=1.0, seed=seed)
+    sim = Simulator(4, 5, death_proba=0.5, seed=seed)
     # works for 1 generation...
     # sim.run(1)
     sim.run(15)
