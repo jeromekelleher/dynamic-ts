@@ -482,12 +482,12 @@ class Simulator(object):
 
         # There's probably a faster way to do all this...
         node_data = {}
+        max_time = -1
         for i in self.transmissions:
             for n in [i.parent, i.child]:
                 if n.index not in node_data:
                     node_data[n.index] = n.time
-
-        max_time = max([node_data[i] for i in node_data.keys()])
+                    max_time = max(max_time, n.time)
 
         node_map = {}
         for i, t in node_data.items():
