@@ -329,11 +329,6 @@ class Individual(object):
                         i.child = mapped_ind
                         new_segment = False
                     else:  # Segment is replaced...
-                        # if current_ancestry_seg < input_ancestry_len - 1:
-                        #     j = self.ancestry[current_ancestry_seg+1]
-                        # else:
-                        #     j = None
-                        # print("II", i, left, right, mapped_ind,"next=", j)
                         i.left = left
                         i.right = right
                         i.child = mapped_ind
