@@ -231,6 +231,7 @@ class Individual(object):
             s.clear()
 
         current_ancestry_seg = 0
+        input_ancestry_len = len(self.ancestry)
 
         for left, right, X in overlapping_segments(S):
             # print(left, right, X)
@@ -316,11 +317,11 @@ class Individual(object):
                 seg = Segment(left, right, mapped_ind)
                 new_segment = True
                 while (
-                    current_ancestry_seg < len(self.ancestry)
+                    current_ancestry_seg < input_ancestry_len
                     and self.ancestry[current_ancestry_seg].left < left
                 ):
                     current_ancestry_seg += 1
-                if current_ancestry_seg < len(self.ancestry):
+                if current_ancestry_seg < input_ancestry_len:
                     i = self.ancestry[current_ancestry_seg]
                     if i.right > seg.left and seg.right > i.left:
                         i.left = max(i.left, seg.left)
@@ -609,8 +610,8 @@ class Simulator(object):
 def main():
     seed = 501251
     # sim = Simulator(100, 5, death_proba=1.0, seed=seed)
-    sim = Simulator(6, 5, death_proba=1.0, seed=seed)
-    # sim = Simulator(8, 5, death_proba=0.5, seed=seed)
+    # sim = Simulator(6, 5, death_proba=1.0, seed=seed)
+    sim = Simulator(8, 5, death_proba=0.5, seed=seed)
     # works for 1 generation...
     # sim.run(1)
     sim.run(200)
