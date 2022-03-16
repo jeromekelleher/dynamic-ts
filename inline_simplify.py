@@ -584,13 +584,13 @@ class Simulator(object):
 
 
 def main():
-    seed = 1
+    seed = 2
     # sim = Simulator(100, 5, death_proba=1.0, seed=seed)
     # sim = Simulator(6, 5, death_proba=1.0, seed=seed)
     sim = Simulator(4, 5, death_proba=0.5, seed=seed)
     # works for 1 generation...
     # sim.run(1)
-    sim.run(10)
+    sim.run(5)
     ts = sim.export()
     print(ts.draw_text())
 
