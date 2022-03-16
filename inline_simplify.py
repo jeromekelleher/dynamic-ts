@@ -314,7 +314,6 @@ class Individual(object):
             # If an individual is alive it always has ancestry over the
             # full segment, so we don't overwrite this.
             if not self.is_alive:
-                seg = Segment(left, right, mapped_ind)
                 new_segment = True
                 while (
                     current_ancestry_seg < input_ancestry_len
@@ -323,9 +322,9 @@ class Individual(object):
                     current_ancestry_seg += 1
                 if current_ancestry_seg < input_ancestry_len:
                     i = self.ancestry[current_ancestry_seg]
-                    if i.right > seg.left and seg.right > i.left:
-                        i.left = max(i.left, seg.left)
-                        i.right = min(i.right, seg.right)
+                    if i.right > left and right > i.left:
+                        i.left = max(i.left, left)
+                        i.right = min(i.right, right)
                         i.child = mapped_ind
                         new_segment = False
                     else:  # Segment is replaced...
@@ -334,7 +333,7 @@ class Individual(object):
                         i.child = mapped_ind
                         new_segment = False
                 if new_segment:
-                    self.ancestry.append(seg)
+                    self.ancestry.append(Segment(left, right, mapped_ind))
 
         assert_non_overlapping(self.ancestry)
 
