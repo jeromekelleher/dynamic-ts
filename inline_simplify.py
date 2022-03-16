@@ -230,6 +230,8 @@ class Individual(object):
         for c, s in self.children.items():
             s.clear()
 
+        current_ancestry_seg = 0
+
         for left, right, X in overlapping_segments(S):
             # print(left, right, X)
             if len(X) == 1:
@@ -313,7 +315,13 @@ class Individual(object):
             if not self.is_alive:
                 seg = Segment(left, right, mapped_ind)
                 new_segment = True
-                for i in self.ancestry:
+                while (
+                    current_ancestry_seg < len(self.ancestry)
+                    and self.ancestry[current_ancestry_seg].left < left
+                ):
+                    current_ancestry_seg += 1
+                if current_ancestry_seg < len(self.ancestry):
+                    i = self.ancestry[current_ancestry_seg]
                     if i.right > seg.left and seg.right > i.left:
                         i.left = max(i.left, seg.left)
                         i.right = min(i.right, seg.right)
@@ -353,6 +361,10 @@ class Individual(object):
 
 @dataclass
 class TransmissionInfo:
+    """
+    Used for export to tskit
+    """
+
     parent: Individual
     child: Individual
     left: int
@@ -595,10 +607,10 @@ class Simulator(object):
 
 
 def main():
-    seed = 2123501251
+    seed = 501251
     # sim = Simulator(100, 5, death_proba=1.0, seed=seed)
-    # sim = Simulator(6, 5, death_proba=1.0, seed=seed)
-    sim = Simulator(8, 5, death_proba=0.5, seed=seed)
+    sim = Simulator(6, 5, death_proba=1.0, seed=seed)
+    # sim = Simulator(8, 5, death_proba=0.5, seed=seed)
     # works for 1 generation...
     # sim.run(1)
     sim.run(200)
