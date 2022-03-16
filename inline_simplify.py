@@ -248,7 +248,8 @@ class Individual(object):
                     print("YES")
                     if mapped_ind not in self.children:
                         mapped_ind.parents.remove(self)
-                    if mapped_ind.is_alive and self.is_alive:
+                    # if mapped_ind.is_alive and self.is_alive:
+                    if self.is_alive:
                         self.add_child_segment(mapped_ind, left, right)
             else:
                 output_mappings = set()
