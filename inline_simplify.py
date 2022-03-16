@@ -132,6 +132,12 @@ class Segment(object):
         return self.left == o.left and self.right == o.right and self.child == o.child
 
 
+@dataclass
+class ChildInputDetails:
+    input_number_segs: int
+    output_number_segs: int
+
+
 class Individual(object):
     """
     Class representing a single individual that was alive at some time.
@@ -229,6 +235,10 @@ class Individual(object):
         # children when done.
         for c, s in self.children.items():
             s.clear()
+
+        input_child_details = {
+            ChildInputDetails(c, len(s)) for c, s in self.children.items()
+        }
 
         current_ancestry_seg = 0
         input_ancestry_len = len(self.ancestry)
