@@ -80,7 +80,7 @@ def overlapping_segments(segments):
             yield left, right, X
 
 
-def propagate_upwards(ind, clear_if_not_alive: bool = False):
+def propagate_upwards(ind):
     pass
     # This isn't working.
     # print("PROPAGATE", ind)
@@ -96,7 +96,7 @@ def propagate_upwards(ind, clear_if_not_alive: bool = False):
         # print("before")
         # ind.print_state()
         # print(f"updating {ind}")
-        ind.update_ancestry(clear_if_not_alive)
+        ind.update_ancestry()
         # print("after")
         # ind.print_state()
         for parent in ind.parents:
@@ -212,7 +212,7 @@ class Individual(object):
                         S.append(y)
         return S
 
-    def update_ancestry(self, processing_replacements: bool = False):
+    def update_ancestry(self):
         # FIXME: for overlapping generations to work, we need
         # to take some hints from standard simplification:
         # We need to clear out the existing ancestry for alive nodes, and
@@ -453,7 +453,7 @@ class Simulator(object):
             self.population[j] = ind
         for _, ind in replacements:
             print(f"propagating birth {ind}")
-            propagate_upwards(ind, True)
+            propagate_upwards(ind)
         self.check_state()
 
     def check_state(self):
@@ -671,20 +671,20 @@ def test_basics():
     e = pop[0].intersecting_ancestry()
     assert len(e) == 2
 
-    propagate_upwards(pop[0], False)
+    propagate_upwards(pop[0])
 
     assert len(pop[0].ancestry) == 3
     assert Segment(0, 1, c) in pop[0].ancestry
     assert Segment(1, 2, pop[0]) in pop[0].ancestry
     assert Segment(2, 3, cc) in pop[0].ancestry
 
-    propagate_upwards(pop[1], False)
+    propagate_upwards(pop[1])
     assert len(pop[1].ancestry) == 2
     assert Segment(0, L // 3, cc) in pop[1].ancestry
     assert Segment(3 * L // 4, L, cc) in pop[1].ancestry
 
-    propagate_upwards(c, True)
-    propagate_upwards(cc, True)
+    propagate_upwards(c)
+    propagate_upwards(cc)
 
     assert len(pop[0].ancestry) == 3
     assert Segment(0, 1, c) in pop[0].ancestry
@@ -728,7 +728,7 @@ def failing_case_1():
     for _, ind in replacements:
         # print("replacement")
         # ind.print_state()
-        propagate_upwards(ind, True)
+        propagate_upwards(ind)
 
     return pop
 
@@ -764,7 +764,7 @@ def failing_case_2():
     for _, ind in replacements:
         # print("replacement")
         # ind.print_state()
-        propagate_upwards(ind, True)
+        propagate_upwards(ind)
 
     return pop
 
@@ -928,7 +928,7 @@ def test_failing_case_2_subtree():
     for _, ind in replacements:
         # print("replacement")
         # ind.print_state()
-        propagate_upwards(ind, True)
+        propagate_upwards(ind)
 
     individuals = collect_unique_individuals(pop)
 
@@ -967,4 +967,4 @@ def test_failing_case_1_next_generation():
     for _, ind in replacements:
         # print("replacement")
         # ind.print_state()
-        propagate_upwards(ind, True)
+        propagate_upwards(ind)
