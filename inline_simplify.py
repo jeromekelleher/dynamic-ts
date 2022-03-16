@@ -213,12 +213,9 @@ class Individual(object):
         return S
 
     def update_ancestry(self):
-        # FIXME: for overlapping generations to work, we need
-        # to take some hints from standard simplification:
-        # We need to clear out the existing ancestry for alive nodes, and
-        # then track the right-most coordinate added into
-        # the new ancestry.  If that value is < L at the end,
-        # we need to fill in the overhang from last_right -> L
+        # TODO: squash edges
+        # TODO: do only 1 pass through self.ancestry
+        # TODO: figure out a return value meaning "this node's ancestry changed"
         S = self.intersecting_ancestry()
 
         print(f"START {self.index}")
@@ -230,9 +227,6 @@ class Individual(object):
         # Do not "bulk" clear: we need to know
         # if current children are no longer
         # children when done.
-        # TODO: investigate possibility of
-        # removing self from parents of all children
-        # as an alternative strategy
         for c, s in self.children.items():
             s.clear()
 
