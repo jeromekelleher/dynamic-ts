@@ -224,7 +224,7 @@ class Individual(object):
         print(f"START {self.index}")
         print(f"S = {S}")
         for c in self.children.keys():
-            print(f"child {c} has ancestry {c.ancestry}")
+            print(f"child {c} has ancestry {c.ancestry}, children {c.children}")
         self.print_state()
 
         # Do not "bulk" clear: we need to know
@@ -250,7 +250,23 @@ class Individual(object):
                         mapped_ind.parents.remove(self)
                     # if mapped_ind.is_alive and self.is_alive:
                     if self.is_alive:
-                        self.add_child_segment(mapped_ind, left, right)
+                        if mapped_ind.is_alive:
+                            print("SEG ADDING", mapped_ind)
+                            self.add_child_segment(mapped_ind, left, right)
+                        else:
+                            print(
+                                "NEED TO PROCESS UNARY THRU DEAD UNARY NODE", mapped_ind
+                            )
+                            for a in mapped_ind.ancestry:
+                                if a.right > left and right > a.left:
+                                    mapped_ind = a.child
+                                    if self not in mapped_ind.parents:
+                                        mapped_ind.parents.add(self)
+                                    self.add_child_segment(
+                                        mapped_ind,
+                                        max(left, a.left),
+                                        min(right, a.right),
+                                    )
             else:
                 output_mappings = set()
                 for x in X:
@@ -588,10 +604,10 @@ def main():
     seed = 2
     # sim = Simulator(100, 5, death_proba=1.0, seed=seed)
     # sim = Simulator(6, 5, death_proba=1.0, seed=seed)
-    sim = Simulator(4, 5, death_proba=0.5, seed=seed)
+    sim = Simulator(8, 5, death_proba=0.5, seed=seed)
     # works for 1 generation...
     # sim.run(1)
-    sim.run(10)
+    sim.run(20)
     ts = sim.export()
     print(ts.draw_text())
 
