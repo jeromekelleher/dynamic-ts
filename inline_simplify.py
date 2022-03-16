@@ -7,7 +7,7 @@ import random
 import collections
 import heapq
 import sys
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 
 import numpy as np
 import tskit
@@ -182,6 +182,20 @@ class Individual(object):
         """
         self.children[child].append(Segment(left, right, None))
 
+    def update_child_segments(
+        self, child, left, right, details: Dict["Individual", ChildInputDetails]
+    ):
+        if child not in details:
+            details[child] = ChildInputDetails(0, 0)
+
+        seg = Segment(left, right, None)
+
+        if details[child].output_number_segs < details[child].input_number_segs:
+            self.children[child][details[child].output_number_segs] = seg
+        else:
+            self.children[child].append(seg)
+        details[child].output_number_segs += 1
+
     def remove_sample_mapping(self, sequence_length):
         """
         Alive ("sample") individuals (nodes) contain a segment [0, sequence_length), self.
@@ -237,7 +251,7 @@ class Individual(object):
             s.clear()
 
         input_child_details = {
-            ChildInputDetails(c, len(s)) for c, s in self.children.items()
+            c: ChildInputDetails(len(s), 0) for c, s in self.children.items()
         }
 
         current_ancestry_seg = 0
