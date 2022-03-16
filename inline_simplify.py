@@ -341,11 +341,6 @@ class Individual(object):
                 if new_segment:
                     self.ancestry.append(seg)
 
-        if not self.is_alive:
-            self.ancestry = sorted(
-                [i for i in self.ancestry if i.child is not None], key=lambda x: x.left
-            )
-
         assert_non_overlapping(self.ancestry)
 
         if not self.is_alive:
