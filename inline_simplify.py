@@ -247,12 +247,14 @@ class Individual(object):
         # Do not "bulk" clear: we need to know
         # if current children are no longer
         # children when done.
-        for c, s in self.children.items():
-            s.clear()
+        # for c, s in self.children.items():
+        #     s.clear()
 
         input_child_details = {
             c: ChildInputDetails(len(s), 0) for c, s in self.children.items()
         }
+
+        # print("START = ", input_child_details)
 
         current_ancestry_seg = 0
         input_ancestry_len = len(self.ancestry)
@@ -273,7 +275,10 @@ class Individual(object):
                     if self.is_alive:
                         if mapped_ind.is_alive:
                             print("SEG ADDING", mapped_ind)
-                            self.add_child_segment(mapped_ind, left, right)
+                            # self.add_child_segment(mapped_ind, left, right)
+                            self.update_child_segments(
+                                mapped_ind, left, right, input_child_details
+                            )
                         else:
                             print(
                                 "NEED TO PROCESS UNARY THRU DEAD UNARY NODE", mapped_ind
@@ -283,10 +288,16 @@ class Individual(object):
                                     mapped_ind = a.child
                                     if self not in mapped_ind.parents:
                                         mapped_ind.parents.add(self)
-                                    self.add_child_segment(
+                                    # self.add_child_segment(
+                                    #    mapped_ind,
+                                    #    max(left, a.left),
+                                    #    min(right, a.right),
+                                    # )
+                                    self.update_child_segments(
                                         mapped_ind,
                                         max(left, a.left),
                                         min(right, a.right),
+                                        input_child_details,
                                     )
             else:
                 output_mappings = set()
@@ -311,15 +322,24 @@ class Individual(object):
                                     x.right = min(right, a.right)
                                     x.child = a.child
                         output_mappings.add(x.child)
-                        self.add_child_segment(x.child, left, right)
+                        # self.add_child_segment(x.child, left, right)
+                        self.update_child_segments(
+                            x.child, left, right, input_child_details
+                        )
                         if self not in x.child.parents:
                             x.child.parents.add(self)
                     else:
                         print("TRAVERSING DOWN A UNARY", x.child)
                         for a in x.child.ancestry:
                             if a.right > left and right > a.left:
-                                self.add_child_segment(
-                                    a.child, max(left, a.left), min(right, a.right)
+                                # self.add_child_segment(
+                                #     a.child, max(left, a.left), min(right, a.right)
+                                # )
+                                self.update_child_segments(
+                                    a.child,
+                                    max(left, a.left),
+                                    min(right, a.right),
+                                    input_child_details,
                                 )
                                 assert a.child in self.children
                                 a.child.parents.add(self)
@@ -368,12 +388,17 @@ class Individual(object):
                         assert self in c.parents, f"{self} {c} {self.ancestry}"
         new_children = collections.defaultdict(list)
         for c, s in self.children.items():
+            # if input_child_details[c].input_number_segs != input_child_details[c].output_number_segs:
+            #     print("BOOYAH", input_child_details[c])
+            # if input_child_details[c].input_number_segs != input_child_details[c].output_number_segs:
+            s = s[0 : input_child_details[c].output_number_segs]
             if len(s) == 0:
                 # there are no coalescences from parent -> child
                 if self in c.parents:  # and not self.is_alive:
                     c.parents.remove(self)
             else:
                 new_children[c] = s
+        #self.children = new_children
         self.children = new_children
         for a in self.ancestry:
             if a.child in self.children and a.child is not self:
