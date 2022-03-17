@@ -299,6 +299,7 @@ class Individual(object):
                                         min(right, a.right),
                                         input_child_details,
                                     )
+                                    break
             else:
                 output_mappings = set()
                 for x in X:
@@ -321,6 +322,7 @@ class Individual(object):
                                     x.left = max(left, a.left)
                                     x.right = min(right, a.right)
                                     x.child = a.child
+                                break
                         output_mappings.add(x.child)
                         # self.add_child_segment(x.child, left, right)
                         self.update_child_segments(
