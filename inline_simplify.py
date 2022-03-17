@@ -386,20 +386,17 @@ class Individual(object):
                 if c is not self:
                     if len(segments) > 0:
                         assert self in c.parents, f"{self} {c} {self.ancestry}"
-        new_children = collections.defaultdict(list)
+        to_prune = []
         for c, s in self.children.items():
-            # if input_child_details[c].input_number_segs != input_child_details[c].output_number_segs:
-            #     print("BOOYAH", input_child_details[c])
-            # if input_child_details[c].input_number_segs != input_child_details[c].output_number_segs:
-            s = s[0 : input_child_details[c].output_number_segs]
+            # Not the most Pythonic, but it is a true in-place edit
+            del s[input_child_details[c].output_number_segs :]
             if len(s) == 0:
                 # there are no coalescences from parent -> child
                 if self in c.parents:  # and not self.is_alive:
                     c.parents.remove(self)
-            else:
-                new_children[c] = s
-        #self.children = new_children
-        self.children = new_children
+                to_prune.append(c)
+        for p in to_prune:
+            self.children.pop(p, None)
         for a in self.ancestry:
             if a.child in self.children and a.child is not self:
                 assert self in a.child.parents, f"{self} {a} {self.ancestry}"
