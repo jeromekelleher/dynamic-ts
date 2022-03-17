@@ -526,13 +526,13 @@ class Simulator(object):
                 # NOTE: this happens b/c as a side-effect of defaultdict
                 if child is not ind:
                     assert ind in child.parents, f"{ind} {child}"
-        for parent in ind.parents:
-            assert parent in reachable
-            if ind not in parent.children:
-                print("the failing parent is")
-                parent.print_state()
-                print("done w/failing parent")
-            assert ind in parent.children, f"{ind} {parent}"
+            for parent in ind.parents:
+                assert parent in reachable
+                if ind not in parent.children:
+                    print("the failing parent is")
+                    parent.print_state()
+                    print("done w/failing parent")
+                assert ind in parent.children, f"{ind} {parent}"
 
     def run(self, num_generations, simplify_interval=1):
         for _ in range(num_generations):
