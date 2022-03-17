@@ -303,7 +303,10 @@ class Individual(object):
             else:
                 # mapped_ind = None
                 mapped_ind = self
+
                 for x in X:
+                    # TODO: this if/else bit seems quite repetitive.
+                    # Should try to reduce it to one smaller bit of logic
                     if len(x.child.children) > 0 or x.child.is_alive:
                         for a in x.child.ancestry:
                             if a.right > left and right > a.left:
