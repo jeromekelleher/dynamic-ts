@@ -301,7 +301,8 @@ class Individual(object):
                                     )
                                     break
             else:
-                mapped_ind = None
+                # mapped_ind = None
+                mapped_ind = self
                 for x in X:
                     if len(x.child.children) > 0 or x.child.is_alive:
                         for a in x.child.ancestry:
@@ -323,10 +324,10 @@ class Individual(object):
                                     x.right = min(right, a.right)
                                     x.child = a.child
                                 break
-                        if mapped_ind is None:
-                            mapped_ind = x.child
-                        elif mapped_ind is not self:
-                            mapped_ind = self
+                        # if mapped_ind is None:
+                        #     mapped_ind = x.child
+                        # elif mapped_ind is not self:
+                        #     mapped_ind = self
                         self.update_child_segments(
                             x.child, left, right, input_child_details
                         )
@@ -347,10 +348,10 @@ class Individual(object):
                                 )
                                 assert a.child in self.children
                                 a.child.parents.add(self)
-                                if mapped_ind is None:
-                                    mapped_ind = x.child
-                                elif mapped_ind is not self:
-                                    mapped_ind = self
+                                # if mapped_ind is None:
+                                #     mapped_ind = x.child
+                                # elif mapped_ind is not self:
+                                #     mapped_ind = self
                                 break
                 if mapped_ind in self.children:
                     # NOTE: this is a really annoyting gotcha:
