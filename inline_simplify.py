@@ -301,7 +301,7 @@ class Individual(object):
                                     )
                                     break
             else:
-                output_mappings = set()
+                output_mappings = set()  # TODO: we should be able to eliminate this
                 for x in X:
                     if len(x.child.children) > 0 or x.child.is_alive:
                         for a in x.child.ancestry:
