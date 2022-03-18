@@ -7,7 +7,7 @@ import random
 import collections
 import heapq
 import sys
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Optional
 
 import numpy as np
 import tskit
@@ -136,6 +136,17 @@ class Segment(object):
 class ChildInputDetails:
     input_number_segs: int
     output_number_segs: int
+
+
+def find_unary_overlap(left, right, child, require_unary=True) -> Optional[Segment]:
+    for a in child.ancestry:
+        if right > a.left and a.right > left:
+            if not require_unary:
+                return Segment(left, right, a.child)
+            elif a.child != child:
+                return Segment(left, right, a.child)
+
+    return None
 
 
 class Individual(object):
@@ -286,79 +297,39 @@ class Individual(object):
                             print(
                                 "NEED TO PROCESS UNARY THRU DEAD UNARY NODE", mapped_ind
                             )
-                            for a in mapped_ind.ancestry:
-                                if a.right > left and right > a.left:
-                                    mapped_ind = a.child
-                                    if self not in mapped_ind.parents:
-                                        mapped_ind.parents.add(self)
-                                    # self.add_child_segment(
-                                    #    mapped_ind,
-                                    #    max(left, a.left),
-                                    #    min(right, a.right),
-                                    # )
-                                    self.update_child_segments(
-                                        mapped_ind,
-                                        max(left, a.left),
-                                        min(right, a.right),
-                                        input_child_details,
-                                    )
-                                    break
+                            unary = find_unary_overlap(left, right, mapped_ind, False)
+                            if unary is not None:
+                                mapped_ind = unary.child
+                                if self not in mapped_ind.parents:
+                                    mapped_ind.parents.add(self)
+                                self.update_child_segments(
+                                    mapped_ind,
+                                    max(left, unary.left),
+                                    min(right, unary.right),
+                                    input_child_details,
+                                )
+                            else:
+                                assert mapped_ind is X[0].child
             else:
-                # mapped_ind = None
                 mapped_ind = self
 
                 for x in X:
-                    # TODO: this if/else bit seems quite repetitive.
-                    # Should try to reduce it to one smaller bit of logic
-                    if len(x.child.children) > 0 or x.child.is_alive:
-                        for a in x.child.ancestry:
-                            if a.right > left and right > a.left:
-                                if a.child is not x.child:
-                                    # NOTE: TODO: FIXME: AHA?!?!?!?
-                                    print(
-                                        "COAL TO A UNARY SEGMENT",
-                                        self,
-                                        "->",
-                                        x.child,
-                                        a.child,
-                                        left,
-                                        right,
-                                        a.left,
-                                        a.right,
-                                    )
-                                    x.left = max(left, a.left)
-                                    x.right = min(right, a.right)
-                                    x.child = a.child
-                                break
-                        # if mapped_ind is None:
-                        #     mapped_ind = x.child
-                        # elif mapped_ind is not self:
-                        #     mapped_ind = self
+                    unary = find_unary_overlap(left, right, x.child)
+                    if unary is None:
                         self.update_child_segments(
                             x.child, left, right, input_child_details
                         )
-                        if self not in x.child.parents:
-                            x.child.parents.add(self)
+                        x.child.parents.add(self)
                     else:
-                        print("TRAVERSING DOWN A UNARY", x.child)
-                        for a in x.child.ancestry:
-                            if a.right > left and right > a.left:
-                                # self.add_child_segment(
-                                #     a.child, max(left, a.left), min(right, a.right)
-                                # )
-                                self.update_child_segments(
-                                    a.child,
-                                    max(left, a.left),
-                                    min(right, a.right),
-                                    input_child_details,
-                                )
-                                assert a.child in self.children
-                                a.child.parents.add(self)
-                                # if mapped_ind is None:
-                                #     mapped_ind = x.child
-                                # elif mapped_ind is not self:
-                                #     mapped_ind = self
-                                break
+                        self.update_child_segments(
+                            unary.child,
+                            max(left, unary.left),
+                            min(right, unary.right),
+                            input_child_details,
+                        )
+                        assert unary.child in self.children
+                        unary.child.parents.add(self)
+
                 if mapped_ind in self.children:
                     # NOTE: this is a really annoyting gotcha:
                     # the defaultdict(list) adds [] to self.children
