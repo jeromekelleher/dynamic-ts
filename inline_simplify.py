@@ -259,6 +259,9 @@ class Individual(object):
         current_ancestry_seg = 0
         input_ancestry_len = len(self.ancestry)
 
+        input_ancestry = [a for a in self.ancestry]
+        input_children = {k:v for k,v in self.children.items()}
+
         for left, right, X in overlapping_segments(S):
             # print(left, right, X)
             if len(X) == 1:
@@ -408,7 +411,18 @@ class Individual(object):
                 assert self in a.child.parents, f"{self} {a} {self.ancestry}"
         print("DONE")
         self.print_state()
+        ancestry_changed = input_ancestry != self.ancestry
+        children_changed = input_children != self.children
+        if ancestry_changed:
+            print("ANCESTRY HAS CHANGED")
+        else:
+            print("ANCESTRY HAS NOT CHANGED")
+        if children_changed:
+            print("CHILDREN HAS CHANGED")
+        else:
+            print("CHILDREN HAS NOT CHANGED")
         print("OUT")
+        return ancestry_changed, children_changed
 
 
 @dataclass
@@ -483,6 +497,7 @@ class Simulator(object):
                 replacements.append((j, child))
                 record_inheritance(0, x, left_parent, child)
                 record_inheritance(x, self.sequence_length, right_parent, child)
+                assert len(child.parents) <= 2, child.parents
                 self.transmissions.append(
                     TransmissionInfo(
                         left_parent,
