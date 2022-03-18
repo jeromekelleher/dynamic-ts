@@ -260,7 +260,7 @@ class Individual(object):
         input_ancestry_len = len(self.ancestry)
 
         input_ancestry = [a for a in self.ancestry]
-        input_children = {k:v for k,v in self.children.items()}
+        input_children = {k: v for k, v in self.children.items()}
 
         for left, right, X in overlapping_segments(S):
             # print(left, right, X)
@@ -422,7 +422,13 @@ class Individual(object):
         else:
             print("CHILDREN HAS NOT CHANGED")
         print("OUT")
-        return ancestry_changed, children_changed
+        # Something CLOSE TO, but not EXACTLY, like the
+        # next line gets on on the path to not visiting
+        # the entire graph.  If we visit parents
+        # if this is true or ind.is_alive, we'll get
+        # the same trees out for small sims but then get
+        # assertions on larger sims.
+        # rv = ancestry_changed or children_changed or len(self.ancestry) == 0
 
 
 @dataclass
