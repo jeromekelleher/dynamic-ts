@@ -177,6 +177,9 @@ class Individual(object):
     def __repr__(self):
         return f"Individual(index={self.index}, time={self.time}, is_alive={self.is_alive})"
 
+    def __hash__(self) -> int:
+        return self.index
+
     def print_state(self):
         print(repr(self))
         print("children = ")
