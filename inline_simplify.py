@@ -403,6 +403,8 @@ class Individual(object):
         # if this is true or ind.is_alive, we'll get
         # the same trees out for small sims but then get
         # assertions on larger sims.
+        # NOTE: we also need to account for a concept of "all ancestry 
+        # segments are unary" in the return value.
         # rv = ancestry_changed or children_changed or len(self.ancestry) == 0
 
 
