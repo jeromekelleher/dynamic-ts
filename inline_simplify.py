@@ -359,6 +359,10 @@ class Individual(object):
                 if new_segment:
                     self.ancestry.append(Segment(left, right, mapped_ind))
 
+        # NOTE: I think we have a subtle bug
+        # It seems possible that len(ouptut ancestry) can be < len(input ancestry)
+        # If so, then the current logic leaves extra input ancestry segments "dangling"
+
         assert_non_overlapping(self.ancestry)
 
         if not self.is_alive:
