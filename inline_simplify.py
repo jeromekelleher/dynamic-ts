@@ -196,6 +196,7 @@ class Individual(object):
     def update_child_segments(
         self, child, left, right, details: Dict["Individual", ChildInputDetails]
     ):
+        # TODO: seems like we should be able to "squash" edges on the fly here?
         if child not in details:
             details[child] = ChildInputDetails(0, 0)
 
