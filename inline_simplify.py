@@ -361,6 +361,11 @@ class Individual(object):
             # If an individual is alive it always has ancestry over the
             # full segment, so we don't overwrite this.
             if not self.is_alive:
+                # FIXME: this is where the bug seems to be!
+                # If we make a big sim, and simply over-write
+                # all input ancestry (clear, then append), we
+                # seem to be able to run a "skip parents we don't
+                # need to process" sim through to commpletion.
                 new_segment = True
                 while (
                     current_ancestry_seg < input_ancestry_len
@@ -735,7 +740,7 @@ def test_basics():
     c = Individual(1, len(pop), True)
     c.ancestry.append(Segment(0, L, c))
     record_inheritance(0, L // 2, pop[0], c)
-    cc = Individual(1,len(pop)+1,  True)
+    cc = Individual(1, len(pop) + 1, True)
     cc.ancestry.append(Segment(0, L, cc))
     record_inheritance(L // 3, 3 * L // 4, pop[0], cc)
 
