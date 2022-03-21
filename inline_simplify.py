@@ -100,8 +100,14 @@ def propagate_upwards(ind):
         # print("after")
         # ind.print_state()
         for parent in ind.parents:
-            assert parent.time < ind.time
-            stack.append(parent)
+            # NOTE: naively adding all parents to
+            # the stack results in double-processing some
+            # parents b/c we often process > 1 child node
+            # before getting to the parent, causing a big
+            # performance loss.
+            if parent not in stack:
+                assert parent.time < ind.time
+                stack.append(parent)
 
 
 def record_inheritance(left, right, parent, child):
