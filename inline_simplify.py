@@ -366,6 +366,9 @@ class Individual(object):
                 # all input ancestry (clear, then append), we
                 # seem to be able to run a "skip parents we don't
                 # need to process" sim through to commpletion.
+                # NOTE: naive over-writes as described above
+                # fail to maintain UNARY segments present
+                # on an unput node.
                 new_segment = True
                 while (
                     current_ancestry_seg < input_ancestry_len
