@@ -732,10 +732,10 @@ def test_basics():
         pop.append(parent)
 
     # transmission w/coalescence
-    c = Individual(1, True)
+    c = Individual(1, len(pop), True)
     c.ancestry.append(Segment(0, L, c))
     record_inheritance(0, L // 2, pop[0], c)
-    cc = Individual(1, True)
+    cc = Individual(1,len(pop)+1,  True)
     cc.ancestry.append(Segment(0, L, cc))
     record_inheritance(L // 3, 3 * L // 4, pop[0], cc)
 
