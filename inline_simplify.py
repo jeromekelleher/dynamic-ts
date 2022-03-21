@@ -369,6 +369,8 @@ class Individual(object):
                 # NOTE: naive over-writes as described above
                 # fail to maintain UNARY segments present
                 # on an unput node.
+                # NOTE: this bit is DROPPING input unary segments.
+                #       Fixing this will be fiddly!
                 new_segment = True
                 while (
                     current_ancestry_seg < input_ancestry_len
@@ -377,6 +379,7 @@ class Individual(object):
                     current_ancestry_seg += 1
                 if current_ancestry_seg < input_ancestry_len:
                     i = self.ancestry[current_ancestry_seg]
+                    print("ANCUPDATE",i,left,right,mapped_ind)
                     if i.right > left and right > i.left:
                         i.left = max(i.left, left)
                         i.right = min(i.right, right)
