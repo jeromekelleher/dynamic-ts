@@ -81,12 +81,18 @@ def overlapping_segments(segments):
 
 
 def propagate_upwards(ind):
-    pass
+    # NOTE: using heapq here and defining __lt__
+    # such that individual is sorted by time (present to past)
+    # greatly cuts the workload here ON TOP OF what is
+    # accomplished by not double-entering nodes into the stack
+    # (see NOTE below).
     # This isn't working.
     # print("PROPAGATE", ind)
     stack = [ind]
     while len(stack) > 0:
-        ind = stack.pop()
+        # ind = stack.pop()
+        ind = heapq.heappop(stack)
+        print("VISIT")
         # print("\t", ind)
         # ind.print_state()
         # We're visting everything here at the moment, but we don't need to.
@@ -107,7 +113,8 @@ def propagate_upwards(ind):
             # performance loss.
             if parent not in stack:
                 assert parent.time < ind.time
-                stack.append(parent)
+                # stack.append(parent)
+                heapq.heappush(stack, parent)
 
 
 def record_inheritance(left, right, parent, child):
@@ -185,6 +192,12 @@ class Individual(object):
 
     def __hash__(self) -> int:
         return self.index
+
+    def __lt__(self, other):
+        """
+        Sort by birth time present -> past
+        """
+        return self.time > other.time
 
     def print_state(self):
         print(repr(self))
