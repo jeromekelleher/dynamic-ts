@@ -383,6 +383,9 @@ class Individual(object):
         current_ancestry_seg = 0
         input_ancestry_len = len(self.ancestry)
 
+        # NOTE: this is a placeholder for smartly detecting ancestry changes.
+        # We are forced into "deep" copies here b/c some times (but not all the time!)
+        # we get burned by Python's reference model.
         input_ancestry = [Segment(a.left, a.right, a.child) for a in self.ancestry]
         input_children = {k: v for k, v in self.children.items()}
 
