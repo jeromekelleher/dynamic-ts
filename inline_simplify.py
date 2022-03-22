@@ -419,6 +419,8 @@ class Individual(object):
                             # at the moment.
                             # Aha -- this happens when a descandant node coalesced on this Segment
                             # but no longer does, which pushes the ancestry of that Segment pastwards.
+                            # Aha, revisited -- this is handling the "special" case of descendants
+                            # of "alive" nodes, which is similar to "sample" nodes.
                             if verbose is True:
                                 print(
                                     "NEED TO PROCESS UNARY THRU DEAD UNARY NODE",
