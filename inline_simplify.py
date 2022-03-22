@@ -12,6 +12,7 @@ from typing import List, Tuple, Dict, Optional
 
 import numpy as np
 import tskit
+from tskit.trees import Tree
 
 # Notes: this is not working yet. The idea is that we should be able to
 # maintain the data structure needed for simplify dynamically as (a)
@@ -382,7 +383,7 @@ class Individual(object):
         current_ancestry_seg = 0
         input_ancestry_len = len(self.ancestry)
 
-        input_ancestry = [a for a in self.ancestry]
+        input_ancestry = [Segment(a.left, a.right, a.child) for a in self.ancestry]
         input_children = {k: v for k, v in self.children.items()}
 
         for left, right, X in overlapping_segments(S):
@@ -540,6 +541,8 @@ class Individual(object):
                 print("ANCESTRY HAS CHANGED")
             else:
                 print("ANCESTRY HAS NOT CHANGED")
+                print(input_ancestry)
+                print(self.ancestry)
             if children_changed:
                 print("CHILDREN HAS CHANGED")
             else:
