@@ -55,6 +55,9 @@ def make_parser():
         default=10,
         help="Simulation length (number of birth steps)",
     )
+    parser.add_argument(
+        "--genome_length", "-L", type=int, default=5, help="Genome length"
+    )
     parser.add_argument("--seed", "-S", type=int, default=42, help="Random number seed")
     parser.add_argument(
         "--verbose",
@@ -72,6 +75,7 @@ def validate_args(args):
     assert args.seed >= 0
     assert args.simlen > 0
     assert args.death_probability > 0.0 and args.death_probability <= 1.0
+    assert args.genome_length > 1
 
 
 @dataclass
@@ -107,7 +111,7 @@ def make_topologies(ts: tskit.TreeSequence, node_labels=None):
         temp = Topology(int(t.interval[0]), int(t.interval[1]), topo)
         if len(topologies) > 0:
             # Deal w/the fact that we are not squashing edges.
-            if temp != topologies[-1]:
+            if temp.parents != topologies[-1].parents:
                 topologies.append(temp)
             else:
                 topologies[-1].right = temp.right
@@ -403,7 +407,8 @@ class Individual(object):
                         else:
                             if verbose is True:
                                 print(
-                                    "NEED TO PROCESS UNARY THRU DEAD UNARY NODE", mapped_ind
+                                    "NEED TO PROCESS UNARY THRU DEAD UNARY NODE",
+                                    mapped_ind,
                                 )
                             unary = find_unary_overlap(left, right, mapped_ind, False)
                             if unary is not None:
@@ -787,7 +792,7 @@ def main():
     validate_args(args)
     # sim = Simulator(100, 5, death_proba=1.0, seed=seed)
     # sim = Simulator(6, 5, death_proba=1.0, seed=seed)
-    sim = Simulator(args.N, 5, death_proba=args.death_probability, seed=args.seed)
+    sim = Simulator(args.N, args.genome_length, death_proba=args.death_probability, seed=args.seed)
     # works for 1 generation...
     # sim.run(1)
     sim.run(args.simlen, args.verbose)
@@ -813,11 +818,11 @@ def main():
 
     tsk_topologies = make_topologies(ts_tsk, node_labels)
 
-    # for i,j in zip(topologies, tsk_topologies):
-    #     if i != j:
-    #         print(i)
-    #         print(j)
-    #         assert False
+    for i,j in zip(topologies, tsk_topologies):
+        if i != j:
+            print(i)
+            print(j)
+            assert False
 
     assert topologies == tsk_topologies
 
