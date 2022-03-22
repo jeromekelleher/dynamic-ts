@@ -897,20 +897,20 @@ def test_basics():
     e = pop[0].intersecting_ancestry()
     assert len(e) == 2
 
-    propagate_upwards(pop[0])
+    propagate_upwards(pop[0], False)
 
     assert len(pop[0].ancestry) == 3
     assert Segment(0, 1, c) in pop[0].ancestry
     assert Segment(1, 2, pop[0]) in pop[0].ancestry
     assert Segment(2, 3, cc) in pop[0].ancestry
 
-    propagate_upwards(pop[1])
+    propagate_upwards(pop[1], False)
     assert len(pop[1].ancestry) == 2
     assert Segment(0, L // 3, cc) in pop[1].ancestry
     assert Segment(3 * L // 4, L, cc) in pop[1].ancestry
 
-    propagate_upwards(c)
-    propagate_upwards(cc)
+    propagate_upwards(c, False)
+    propagate_upwards(cc, False)
 
     assert len(pop[0].ancestry) == 3
     assert Segment(0, 1, c) in pop[0].ancestry
@@ -948,13 +948,13 @@ def failing_case_1():
         dead.is_alive = False
         # NOTE: EXPERIMENTAL
         dead.remove_sample_mapping(sequence_length=L)
-        propagate_upwards(dead)
+        propagate_upwards(dead, False)
         pop[j] = ind
 
     for _, ind in replacements:
         # print("replacement")
         # ind.print_state()
-        propagate_upwards(ind)
+        propagate_upwards(ind, False)
 
     return pop
 
@@ -984,13 +984,13 @@ def failing_case_2():
         dead.is_alive = False
         # NOTE: EXPERIMENTAL
         dead.remove_sample_mapping(sequence_length=L)
-        propagate_upwards(dead)
+        propagate_upwards(dead, False)
         pop[j] = ind
 
     for _, ind in replacements:
         # print("replacement")
         # ind.print_state()
-        propagate_upwards(ind)
+        propagate_upwards(ind, False)
 
     return pop
 
@@ -1147,14 +1147,14 @@ def test_failing_case_2_subtree():
         dead.is_alive = False
         # NOTE: EXPERIMENTAL
         dead.remove_sample_mapping(sequence_length=L)
-        propagate_upwards(dead)
+        propagate_upwards(dead, False)
         pop[j] = ind
 
     print("propagate replacements")
     for _, ind in replacements:
         # print("replacement")
         # ind.print_state()
-        propagate_upwards(ind)
+        propagate_upwards(ind, False)
 
     individuals = collect_unique_individuals(pop)
 
@@ -1187,10 +1187,10 @@ def test_failing_case_1_next_generation():
         dead.is_alive = False
         # NOTE: EXPERIMENTAL
         dead.remove_sample_mapping(sequence_length=L)
-        propagate_upwards(dead)
+        propagate_upwards(dead, False)
         pop[j] = ind
 
     for _, ind in replacements:
         # print("replacement")
         # ind.print_state()
-        propagate_upwards(ind)
+        propagate_upwards(ind, False)
