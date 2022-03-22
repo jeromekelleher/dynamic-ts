@@ -405,6 +405,13 @@ class Individual(object):
                                 mapped_ind, left, right, input_child_details
                             )
                         else:
+                            # NOTE: TODO: FIXME: 
+                            # I am not happy with this logic.
+                            # We are taking a unary transmission and moving
+                            # it pastwards in time.  In general, we want unary
+                            # transmissions to derive from the most recent possible node,
+                            # so that things like mutation simplification cannot cause
+                            # "mutation time travel"
                             if verbose is True:
                                 print(
                                     "NEED TO PROCESS UNARY THRU DEAD UNARY NODE",
