@@ -354,6 +354,8 @@ class Individual(object):
         # TODO: squash edges
         # TODO: do only 1 pass through self.ancestry
         # TODO: figure out a return value meaning "this node's ancestry changed"
+        # FIXME: overlapping generations tend to fail asserts when run for short periods of  time,
+        #        but the same seeds do "just fine" in longer simulation lengths.
         S = self.intersecting_ancestry()
 
         if verbose is True:
