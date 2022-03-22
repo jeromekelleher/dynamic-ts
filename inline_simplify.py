@@ -415,6 +415,8 @@ class Individual(object):
                             # A counter argument is that we get incorrect topologies out
                             # withouth this logic, so it is possible that I'm confusing myself
                             # at the moment.
+                            # Aha -- this happens when a descandant node coalesced on this Segment
+                            # but no longer does, which pushes the ancestry of that Segment pastwards.
                             if verbose is True:
                                 print(
                                     "NEED TO PROCESS UNARY THRU DEAD UNARY NODE",
