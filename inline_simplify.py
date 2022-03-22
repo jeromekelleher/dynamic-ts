@@ -312,10 +312,28 @@ class Individual(object):
         seg = Segment(left, right, None)
 
         if details[child].output_number_segs < details[child].input_number_segs:
-            self.children[child][details[child].output_number_segs] = seg
+            n = details[child].output_number_segs
+            if n > 0:
+                if self.children[child][n - 1].right == left:
+                    self.children[child][n - 1].right = right
+                else:
+                    self.children[child][n] = seg
+                    details[child].output_number_segs += 1
+            else:
+                self.children[child][n] = seg
+                details[child].output_number_segs += 1
         else:
-            self.children[child].append(seg)
-        details[child].output_number_segs += 1
+            n = details[child].output_number_segs
+            assert n == len(self.children[child])
+            if n > 0:
+                if self.children[child][n - 1].right == left:
+                    self.children[child][n - 1].right = right
+                else:
+                    self.children[child].append(seg)
+                    details[child].output_number_segs += 1
+            else:
+                self.children[child].append(seg)
+                details[child].output_number_segs += 1
 
     def remove_sample_mapping(self, sequence_length):
         """
@@ -390,7 +408,7 @@ class Individual(object):
         input_children = {k: v for k, v in self.children.items()}
 
         for left, right, X in overlapping_segments(S):
-            # print(left, right, X)
+            print(left, right, X)
             if len(X) == 1:
                 mapped_ind = X[0].child
                 if verbose is True:
@@ -492,27 +510,32 @@ class Individual(object):
                     and self.ancestry[current_ancestry_seg].left < left
                 ):
                     current_ancestry_seg += 1
+                print("HERE", current_ancestry_seg, input_ancestry_len, left, right)
                 if current_ancestry_seg < input_ancestry_len:
                     i = self.ancestry[current_ancestry_seg]
                     if verbose is True:
                         print("ANCUPDATE", i, left, right, mapped_ind)
                     if i.right > left and right > i.left:
+                        print("EDIT", left, right, i.left, i.right, mapped_ind)
                         i.left = max(i.left, left)
                         i.right = min(i.right, right)
                         i.child = mapped_ind
                         new_segment = False
                     else:  # Segment is replaced...
+                        print("REPLACE", left, right, mapped_ind)
                         i.left = left
                         i.right = right
                         i.child = mapped_ind
                         new_segment = False
                 if new_segment:
+                    print("APPEND NEW", left, right, mapped_ind)
                     self.ancestry.append(Segment(left, right, mapped_ind))
 
         # NOTE: I think we have a subtle bug
         # It seems possible that len(ouptut ancestry) can be < len(input ancestry)
         # If so, then the current logic leaves extra input ancestry segments "dangling"
 
+        print("SELF = ", self, self.ancestry)
         assert_non_overlapping(self.ancestry)
 
         if not self.is_alive:
