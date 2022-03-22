@@ -44,21 +44,23 @@ def make_parser():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
 
-    parser.add_argument("-N", type=int, default=5, help="Haploid population size")
+    parser.add_argument("-N", type=int, default=8, help="Haploid population size")
     parser.add_argument(
-        "--death_probability", "-d", type=float, default=1.0, help="Death probability"
+        "--death_probability", "-d", type=float, default=0.5, help="Death probability"
     )
     parser.add_argument(
         "--simlen",
         "-s",
         type=int,
-        default=10,
+        default=200,
         help="Simulation length (number of birth steps)",
     )
     parser.add_argument(
         "--genome_length", "-L", type=int, default=5, help="Genome length"
     )
-    parser.add_argument("--seed", "-S", type=int, default=42, help="Random number seed")
+    parser.add_argument(
+        "--seed", "-S", type=int, default=501251, help="Random number seed"
+    )
     parser.add_argument(
         "--verbose",
         "-v",
