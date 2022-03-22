@@ -461,6 +461,9 @@ class Individual(object):
                 # on an unput node.
                 # NOTE: this bit is DROPPING input unary segments.
                 #       Fixing this will be fiddly!
+                # NOTE: the general problem is to update coalescences
+                #       without dropping/over-writing unary transmissions
+                #       incorrectly. This is the hard problem!
                 new_segment = True
                 while (
                     current_ancestry_seg < input_ancestry_len
@@ -792,7 +795,9 @@ def main():
     validate_args(args)
     # sim = Simulator(100, 5, death_proba=1.0, seed=seed)
     # sim = Simulator(6, 5, death_proba=1.0, seed=seed)
-    sim = Simulator(args.N, args.genome_length, death_proba=args.death_probability, seed=args.seed)
+    sim = Simulator(
+        args.N, args.genome_length, death_proba=args.death_probability, seed=args.seed
+    )
     # works for 1 generation...
     # sim.run(1)
     sim.run(args.simlen, args.verbose)
@@ -818,7 +823,7 @@ def main():
 
     tsk_topologies = make_topologies(ts_tsk, node_labels)
 
-    for i,j in zip(topologies, tsk_topologies):
+    for i, j in zip(topologies, tsk_topologies):
         if i != j:
             print(i)
             print(j)
