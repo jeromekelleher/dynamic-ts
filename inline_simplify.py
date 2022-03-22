@@ -56,6 +56,13 @@ def make_parser():
         help="Simulation length (number of birth steps)",
     )
     parser.add_argument("--seed", "-S", type=int, default=42, help="Random number seed")
+    parser.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        default=False,
+        help="Print excessive amount of stuff to the screen",
+    )
 
     return parser
 
@@ -152,7 +159,7 @@ def overlapping_segments(segments):
             yield left, right, X
 
 
-def propagate_upwards(ind):
+def propagate_upwards(ind, verbose):
     # NOTE: using heapq here and defining __lt__
     # such that individual is sorted by time (present to past)
     # greatly cuts the workload here ON TOP OF what is
@@ -164,7 +171,8 @@ def propagate_upwards(ind):
     while len(stack) > 0:
         # ind = stack.pop()
         ind = heapq.heappop(stack)
-        print("VISIT")
+        if verbose is True:
+            print("VISIT")
         # print("\t", ind)
         # ind.print_state()
         # We're visting everything here at the moment, but we don't need to.
@@ -174,7 +182,7 @@ def propagate_upwards(ind):
         # print("before")
         # ind.print_state()
         # print(f"updating {ind}")
-        ind.update_ancestry()
+        ind.update_ancestry(verbose)
         # print("after")
         # ind.print_state()
         for parent in ind.parents:
@@ -338,17 +346,18 @@ class Individual(object):
                         S.append(y)
         return S
 
-    def update_ancestry(self):
+    def update_ancestry(self, verbose):
         # TODO: squash edges
         # TODO: do only 1 pass through self.ancestry
         # TODO: figure out a return value meaning "this node's ancestry changed"
         S = self.intersecting_ancestry()
 
-        print(f"START {self.index}")
-        print(f"S = {S}")
-        for c in self.children.keys():
-            print(f"child {c} has ancestry {c.ancestry}, children {c.children}")
-        self.print_state()
+        if verbose is True:
+            print(f"START {self.index}")
+            print(f"S = {S}")
+            for c in self.children.keys():
+                print(f"child {c} has ancestry {c.ancestry}, children {c.children}")
+            self.print_state()
 
         # Do not "bulk" clear: we need to know
         # if current children are no longer
@@ -372,26 +381,30 @@ class Individual(object):
             # print(left, right, X)
             if len(X) == 1:
                 mapped_ind = X[0].child
-                print("unary", mapped_ind, X[0])
+                if verbose is True:
+                    print("unary", mapped_ind, X[0])
                 # unary_mapped_ind.append(mapped_ind)
                 if self in mapped_ind.parents:
                     # need to guard against unary
                     # edges to the right of coalescences
-                    print("YES")
+                    if verbose is True:
+                        print("YES")
                     if mapped_ind not in self.children:
                         mapped_ind.parents.remove(self)
                     # if mapped_ind.is_alive and self.is_alive:
                     if self.is_alive:
                         if mapped_ind.is_alive:
-                            print("SEG ADDING", mapped_ind)
+                            if verbose is True:
+                                print("SEG ADDING", mapped_ind)
                             # self.add_child_segment(mapped_ind, left, right)
                             self.update_child_segments(
                                 mapped_ind, left, right, input_child_details
                             )
                         else:
-                            print(
-                                "NEED TO PROCESS UNARY THRU DEAD UNARY NODE", mapped_ind
-                            )
+                            if verbose is True:
+                                print(
+                                    "NEED TO PROCESS UNARY THRU DEAD UNARY NODE", mapped_ind
+                                )
                             unary = find_unary_overlap(left, right, mapped_ind, False)
                             if unary is not None:
                                 mapped_ind = unary.child
@@ -451,7 +464,8 @@ class Individual(object):
                     current_ancestry_seg += 1
                 if current_ancestry_seg < input_ancestry_len:
                     i = self.ancestry[current_ancestry_seg]
-                    print("ANCUPDATE", i, left, right, mapped_ind)
+                    if verbose is True:
+                        print("ANCUPDATE", i, left, right, mapped_ind)
                     if i.right > left and right > i.left:
                         i.left = max(i.left, left)
                         i.right = min(i.right, right)
@@ -490,19 +504,21 @@ class Individual(object):
         for a in self.ancestry:
             if a.child in self.children and a.child is not self:
                 assert self in a.child.parents, f"{self} {a} {self.ancestry}"
-        print("DONE")
-        self.print_state()
+        if verbose is True:
+            print("DONE")
+            self.print_state()
         ancestry_changed = input_ancestry != self.ancestry
         children_changed = input_children != self.children
-        if ancestry_changed:
-            print("ANCESTRY HAS CHANGED")
-        else:
-            print("ANCESTRY HAS NOT CHANGED")
-        if children_changed:
-            print("CHILDREN HAS CHANGED")
-        else:
-            print("CHILDREN HAS NOT CHANGED")
-        print("OUT")
+        if verbose is True:
+            if ancestry_changed:
+                print("ANCESTRY HAS CHANGED")
+            else:
+                print("ANCESTRY HAS NOT CHANGED")
+            if children_changed:
+                print("CHILDREN HAS CHANGED")
+            else:
+                print("CHILDREN HAS NOT CHANGED")
+            print("OUT")
         # Something CLOSE TO, but not EXACTLY, like the
         # next line gets on on the path to not visiting
         # the entire graph.  If we visit parents
@@ -549,7 +565,7 @@ class Simulator(object):
             assert i.index < population_size
             i.ancestry.append(Segment(0, sequence_length, i))
 
-    def run_generation(self):
+    def run_generation(self, verbose):
         """
         Implements a single generation.
         """
@@ -611,12 +627,14 @@ class Simulator(object):
             dead = self.population[j]
             dead.is_alive = False
             dead.remove_sample_mapping(sequence_length=self.sequence_length)
-            print(f"propagating death {dead}")
-            propagate_upwards(dead)
+            if verbose is True:
+                print(f"propagating death {dead}")
+            propagate_upwards(dead, verbose)
             self.population[j] = ind
         for _, ind in replacements:
-            print(f"propagating birth {ind}")
-            propagate_upwards(ind)
+            if verbose is True:
+                print(f"propagating birth {ind}")
+            propagate_upwards(ind, verbose)
         self.check_state()
 
     def check_state(self):
@@ -645,9 +663,9 @@ class Simulator(object):
                     print("done w/failing parent")
                 assert ind in parent.children, f"{ind} {parent}"
 
-    def run(self, num_generations, simplify_interval=1):
+    def run(self, num_generations, verbose, simplify_interval=1):
         for _ in range(num_generations):
-            self.run_generation()
+            self.run_generation(verbose)
 
     def make_samples_list_for_tskit(self, node_map) -> List[int]:
         rv = []
@@ -772,7 +790,7 @@ def main():
     sim = Simulator(args.N, 5, death_proba=args.death_probability, seed=args.seed)
     # works for 1 generation...
     # sim.run(1)
-    sim.run(args.simlen)
+    sim.run(args.simlen, args.verbose)
     ts = sim.export()
     # print(ts.draw_text())
 
