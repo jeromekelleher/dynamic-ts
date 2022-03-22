@@ -38,6 +38,49 @@ import tskit
 # Not sure if any of this will work, but that's the thinking anyway.
 
 
+@dataclass
+class ParentNode:
+    time: float
+    children: List[int]
+
+    def __post_init__(self):
+        self.children = sorted(self.children)
+
+
+@dataclass
+class Topology:
+    left: int
+    right: int
+    parents: Dict[int, ParentNode]
+
+
+def make_topologies(ts: tskit.TreeSequence, node_labels=None):
+    topologies = []
+
+    for t in ts.trees():
+        topo = {}
+        for n in t.preorder():
+            if node_labels is None:
+                topo[n] = ParentNode(ts.node(n).time, [c for c in t.children(n)])
+            else:
+                # Back-label from tkit's IDs to those used in this prototype
+                p = node_labels[n]
+                topo[p] = ParentNode(
+                    ts.node(n).time, [node_labels[c] for c in t.children(n)]
+                )
+        temp = Topology(int(t.interval[0]), int(t.interval[1]), topo)
+        if len(topologies) > 0:
+            # Deal w/the fact that we are not squashing edges.
+            if temp != topologies[-1]:
+                topologies.append(temp)
+            else:
+                topologies[-1].right = temp.right
+        else:
+            topologies.append(temp)
+
+    return topologies
+
+
 def assert_non_overlapping(segments):
     for j in range(1, len(segments)):
         x = segments[j - 1]
@@ -379,7 +422,7 @@ class Individual(object):
                     current_ancestry_seg += 1
                 if current_ancestry_seg < input_ancestry_len:
                     i = self.ancestry[current_ancestry_seg]
-                    print("ANCUPDATE",i,left,right,mapped_ind)
+                    print("ANCUPDATE", i, left, right, mapped_ind)
                     if i.right > left and right > i.left:
                         i.left = max(i.left, left)
                         i.right = min(i.right, right)
@@ -700,7 +743,9 @@ def main():
     # sim.run(1)
     sim.run(200)
     ts = sim.export()
-    print(ts.draw_text())
+    # print(ts.draw_text())
+
+    topologies = make_topologies(ts)
 
     tables, samples, node_map = sim.convert_transmissions_to_tables()
     # print(samples)
@@ -714,8 +759,18 @@ def main():
     node_labels = {}
     for i, j in enumerate(idmap):
         if j != tskit.NULL:
-            node_labels[j] = str(node_map[i])
-    print(ts_tsk.draw_text(node_labels=node_labels))
+            node_labels[j] = node_map[i]
+    # print(ts_tsk.draw_text(node_labels=node_labels))
+
+    tsk_topologies = make_topologies(ts_tsk, node_labels)
+
+    # for i,j in zip(topologies, tsk_topologies):
+    #     if i != j:
+    #         print(i)
+    #         print(j)
+    #         assert False
+
+    assert topologies == tsk_topologies
 
 
 if __name__ == "__main__":
