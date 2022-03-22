@@ -405,7 +405,7 @@ class Individual(object):
                                 mapped_ind, left, right, input_child_details
                             )
                         else:
-                            # NOTE: TODO: FIXME: 
+                            # NOTE: TODO: FIXME:
                             # I am not happy with this logic.
                             # We are taking a unary transmission and moving
                             # it pastwards in time.  In general, we want unary
