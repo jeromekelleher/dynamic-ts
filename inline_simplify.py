@@ -412,6 +412,9 @@ class Individual(object):
                             # transmissions to derive from the most recent possible node,
                             # so that things like mutation simplification cannot cause
                             # "mutation time travel"
+                            # A counter argument is that we get incorrect topologies out
+                            # withouth this logic, so it is possible that I'm confusing myself
+                            # at the moment.
                             if verbose is True:
                                 print(
                                     "NEED TO PROCESS UNARY THRU DEAD UNARY NODE",
