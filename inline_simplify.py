@@ -2,6 +2,7 @@
 Prototype forward simulator where we simplify inline, using the Individual
 structures directly.
 """
+import argparse
 from dataclasses import dataclass
 import random
 import collections
@@ -36,6 +37,34 @@ import tskit
 # too much memory.
 
 # Not sure if any of this will work, but that's the thinking anyway.
+
+
+def make_parser():
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+
+    parser.add_argument("-N", type=int, default=5, help="Haploid population size")
+    parser.add_argument(
+        "--death_probability", "-d", type=float, default=1.0, help="Death probability"
+    )
+    parser.add_argument(
+        "--simlen",
+        "-s",
+        type=int,
+        default=10,
+        help="Simulation length (number of birth steps)",
+    )
+    parser.add_argument("--seed", "-S", type=int, default=42, help="Random number seed")
+
+    return parser
+
+
+def validate_args(args):
+    assert args.N > 1
+    assert args.seed >= 0
+    assert args.simlen > 0
+    assert args.death_probability > 0.0 and args.death_probability <= 1.0
 
 
 @dataclass
@@ -735,13 +764,15 @@ class Simulator(object):
 
 
 def main():
-    seed = 501251
+    parser = make_parser()
+    args = parser.parse_args(sys.argv[1:])
+    validate_args(args)
     # sim = Simulator(100, 5, death_proba=1.0, seed=seed)
     # sim = Simulator(6, 5, death_proba=1.0, seed=seed)
-    sim = Simulator(8, 5, death_proba=0.5, seed=seed)
+    sim = Simulator(args.N, 5, death_proba=args.death_probability, seed=args.seed)
     # works for 1 generation...
     # sim.run(1)
-    sim.run(200)
+    sim.run(args.simlen)
     ts = sim.export()
     # print(ts.draw_text())
 
