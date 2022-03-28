@@ -815,6 +815,14 @@ class Simulator(object):
         # Map the individuals to their indexes to make debug easier.
         # THIS IS A TERRIBLE IDEA!!!
         sorted_individuals = sorted(self.all_reachable(), key=lambda x: x.index)
+        sorted_individuals = [
+            i
+            for i in filter(
+                lambda x: x.is_alive is False
+                or (len(x.parents) > 0 or len(x.children) > 0),
+                sorted_individuals,
+            )
+        ]
         next_ind = 0
         for ind in sorted_individuals:
             while ind.index != next_ind:
