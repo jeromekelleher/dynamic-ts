@@ -766,22 +766,16 @@ class Simulator(object):
 
         # There's probably a faster way to do all this...
         node_data = {}
-        max_time = -1
         for i in self.transmissions:
             for n in [i.parent, i.child]:
                 if n.index not in node_data:
                     node_data[n.index] = n.time
-                    max_time = max(max_time, n.time)
 
         alive_nodes = self.get_alive_node_indexes_and_times()
 
-        max_alive_node_time = max([i[1] for i in alive_nodes])
-
-        assert max_time == max_alive_node_time
-
         node_map = {}
         for i, t in node_data.items():
-            x = tables.nodes.add_row(0, -(t - max_time))
+            x = tables.nodes.add_row(0, -(t - self.time))
             node_map[i] = x
 
         samples = self.make_samples_list_for_tskit(node_map)
