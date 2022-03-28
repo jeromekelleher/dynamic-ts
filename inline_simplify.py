@@ -574,6 +574,8 @@ class Individual(object):
             else:
                 print("CHILDREN HAS NOT CHANGED")
             print("OUT")
+
+        assert self not in self.parents
         # Something CLOSE TO, but not EXACTLY, like the
         # next line gets on on the path to not visiting
         # the entire graph.  If we visit parents
