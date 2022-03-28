@@ -407,8 +407,13 @@ class Individual(object):
         input_ancestry = [Segment(a.left, a.right, a.child) for a in self.ancestry]
         input_children = {k: v for k, v in self.children.items()}
 
+        input_unary = [i for i in self.ancestry if i.child is not self]
+
+        if not self.is_alive:
+            self.ancestry.clear()
+
         for left, right, X in overlapping_segments(S):
-            print(left, right, X)
+            # print(left, right, X)
             if len(X) == 1:
                 mapped_ind = X[0].child
                 if verbose is True:
@@ -504,38 +509,44 @@ class Individual(object):
                 # NOTE: the general problem is to update coalescences
                 #       without dropping/over-writing unary transmissions
                 #       incorrectly. This is the hard problem!
-                new_segment = True
-                while (
-                    current_ancestry_seg < input_ancestry_len
-                    and self.ancestry[current_ancestry_seg].left < left
-                ):
-                    current_ancestry_seg += 1
-                print("HERE", current_ancestry_seg, input_ancestry_len, left, right)
-                if current_ancestry_seg < input_ancestry_len:
-                    i = self.ancestry[current_ancestry_seg]
-                    if verbose is True:
-                        print("ANCUPDATE", i, left, right, mapped_ind)
-                    if i.right > left and right > i.left:
-                        print("EDIT", left, right, i.left, i.right, mapped_ind)
-                        i.left = max(i.left, left)
-                        i.right = min(i.right, right)
-                        i.child = mapped_ind
-                        new_segment = False
-                    else:  # Segment is replaced...
-                        print("REPLACE", left, right, mapped_ind)
-                        i.left = left
-                        i.right = right
-                        i.child = mapped_ind
-                        new_segment = False
-                if new_segment:
-                    print("APPEND NEW", left, right, mapped_ind)
-                    self.ancestry.append(Segment(left, right, mapped_ind))
+                # new_segment = True
+                # while (
+                #     current_ancestry_seg < input_ancestry_len
+                #     and self.ancestry[current_ancestry_seg].left < left
+                # ):
+                #     current_ancestry_seg += 1
+                # print("HERE", current_ancestry_seg, input_ancestry_len, left, right)
+                # if current_ancestry_seg < input_ancestry_len:
+                #     i = self.ancestry[current_ancestry_seg]
+                #     if verbose is True:
+                #         print("ANCUPDATE", i, left, right, mapped_ind)
+                #     if i.right > left and right > i.left:
+                #         print("EDIT", left, right, i.left, i.right, mapped_ind)
+                #         i.left = max(i.left, left)
+                #         i.right = min(i.right, right)
+                #         i.child = mapped_ind
+                #         new_segment = False
+                #     else:  # Segment is replaced...
+                #         print("REPLACE", left, right, mapped_ind)
+                #         i.left = left
+                #         i.right = right
+                #         i.child = mapped_ind
+                #         new_segment = False
+                # if new_segment:
+                #     print("APPEND NEW", left, right, mapped_ind)
+                #     self.ancestry.append(Segment(left, right, mapped_ind))
+                self.ancestry.append(Segment(left, right, mapped_ind))
+
+        if not self.is_alive:
+            # print("U:",input_unary)
+            # print("A:",self.ancestry)
+            self.ancestry = sorted(input_unary + self.ancestry, key=lambda x: x.left)
 
         # NOTE: I think we have a subtle bug
         # It seems possible that len(ouptut ancestry) can be < len(input ancestry)
         # If so, then the current logic leaves extra input ancestry segments "dangling"
 
-        print("SELF = ", self, self.ancestry)
+        # print("SELF = ", self, self.ancestry)
         assert_non_overlapping(self.ancestry)
 
         if not self.is_alive:
