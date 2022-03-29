@@ -438,7 +438,7 @@ class Individual(object):
                                 mapped_ind, left, right, input_child_details
                             )
                         else:
-                           # NOTE: TODO: FIXME:
+                            # NOTE: TODO: FIXME:
                             # I am not happy with this logic.
                             # We are taking a unary transmission and moving
                             # it pastwards in time.  In general, we want unary
@@ -518,10 +518,13 @@ class Individual(object):
                     ):
                         print("NODE DIFF", xx, left, right, mapped_ind, output_ancestry)
                     elif mapped_ind is output_ancestry[xx].child:
+                        # NOTE: this should replace the coords of the segment with left/right.
                         print(
                             "COORD DIFF", xx, left, right, mapped_ind, output_ancestry
                         )
                     else:
+                        # This one's a bit tricky...
+                        # It always seems to happend AFTER A COORD DIFF
                         print(
                             "TOTAL DIFF",
                             output_ancestry[xx].child is self,
