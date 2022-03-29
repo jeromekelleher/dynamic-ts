@@ -2,6 +2,7 @@
 Prototype forward simulator where we simplify inline, using the Individual
 structures directly.
 """
+from bisect import bisect, bisect_right, bisect_left
 import argparse
 from dataclasses import dataclass
 import random
@@ -400,6 +401,7 @@ class Individual(object):
 
         current_ancestry_seg = 0
         input_ancestry_len = len(self.ancestry)
+        output_ancestry = [Segment(a.left, a.right, a.child) for a in self.ancestry]
 
         # NOTE: this is a placeholder for smartly detecting ancestry changes.
         # We are forced into "deep" copies here b/c some times (but not all the time!)
@@ -436,7 +438,7 @@ class Individual(object):
                                 mapped_ind, left, right, input_child_details
                             )
                         else:
-                            # NOTE: TODO: FIXME:
+                           # NOTE: TODO: FIXME:
                             # I am not happy with this logic.
                             # We are taking a unary transmission and moving
                             # it pastwards in time.  In general, we want unary
@@ -496,6 +498,51 @@ class Individual(object):
             # If an individual is alive it always has ancestry over the
             # full segment, so we don't overwrite this.
             if not self.is_alive:
+                xx = 0
+                for i, j in enumerate(output_ancestry):
+                    if j.right >= right:
+                        xx = i
+                        break
+                if xx < len(output_ancestry):
+                    if (
+                        left == output_ancestry[xx].left
+                        and right == output_ancestry[xx].right
+                        and mapped_ind is output_ancestry[xx].child
+                    ):
+                        # Yay, nothing to do.
+                        # print("EXACT MATCH", xx, left, right, mapped_ind, output_ancestry)
+                        pass
+                    elif (
+                        left == output_ancestry[xx].left
+                        and right == output_ancestry[xx].right
+                    ):
+                        print("NODE DIFF", xx, left, right, mapped_ind, output_ancestry)
+                    elif mapped_ind is output_ancestry[xx].child:
+                        print(
+                            "COORD DIFF", xx, left, right, mapped_ind, output_ancestry
+                        )
+                    else:
+                        print(
+                            "TOTAL DIFF",
+                            output_ancestry[xx].child is self,
+                            xx,
+                            left,
+                            right,
+                            mapped_ind,
+                            output_ancestry,
+                        )
+                else:
+                    if len(output_ancestry) > 0:
+                        print(
+                            "NEW SEG INTERESTING",
+                            output_ancestry,
+                            left,
+                            right,
+                            mapped_ind,
+                        )
+                    else:
+                        print("NEW SEG", output_ancestry, left, right, mapped_ind)
+
                 # FIXME: this is where the bug seems to be!
                 # If we make a big sim, and simply over-write
                 # all input ancestry (clear, then append), we
@@ -546,7 +593,8 @@ class Individual(object):
         # It seems possible that len(ouptut ancestry) can be < len(input ancestry)
         # If so, then the current logic leaves extra input ancestry segments "dangling"
 
-        # print("SELF = ", self, self.ancestry)
+        print("UNARY_INPUT = ", input_unary)
+        print("SELF = ", self, self.ancestry)
         assert_non_overlapping(self.ancestry)
 
         if not self.is_alive:
