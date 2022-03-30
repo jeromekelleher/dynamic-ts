@@ -402,6 +402,13 @@ class Individual(object):
         current_ancestry_seg = 0
         input_ancestry_len = len(self.ancestry)
         output_ancestry = [Segment(a.left, a.right, a.child) for a in self.ancestry]
+        unaryness = []
+
+        for i, a in enumerate(output_ancestry):
+            if a.child is not self:
+                unaryness.append(i)
+
+        print("UNARYNESS = ", unaryness)
 
         # NOTE: this is a placeholder for smartly detecting ancestry changes.
         # We are forced into "deep" copies here b/c some times (but not all the time!)
@@ -409,7 +416,11 @@ class Individual(object):
         input_ancestry = [Segment(a.left, a.right, a.child) for a in self.ancestry]
         input_children = {k: v for k, v in self.children.items()}
 
-        input_unary = [i for i in self.ancestry if i.child is not self]
+        input_unary = [
+            Segment(i.left, i.right, i.child)
+            for i in self.ancestry
+            if i.child is not self
+        ]
 
         if not self.is_alive:
             self.ancestry.clear()
@@ -516,7 +527,15 @@ class Individual(object):
                         left == output_ancestry[xx].left
                         and right == output_ancestry[xx].right
                     ):
-                        print("NODE DIFF", xx, left, right, mapped_ind, output_ancestry)
+                        print(
+                            "NODE DIFF",
+                            xx,
+                            left,
+                            right,
+                            mapped_ind,
+                            mapped_ind is self,
+                            output_ancestry,
+                        )
                     elif mapped_ind is output_ancestry[xx].child:
                         # NOTE: this should replace the coords of the segment with left/right.
                         print(
@@ -596,8 +615,14 @@ class Individual(object):
         # It seems possible that len(ouptut ancestry) can be < len(input ancestry)
         # If so, then the current logic leaves extra input ancestry segments "dangling"
 
+        uo = [i for i in self.ancestry if i.child is not self]
+        if input_unary != uo:
+            print("UNARY CHANGE")
         print("UNARY_INPUT = ", input_unary)
-        print("SELF = ", self, self.ancestry)
+        print("UNARY OUTPUT = ", uo)
+
+        print("INPUT ANC = ", input_ancestry)
+        print("SELF = ", self, input_ancestry == self.ancestry, self.ancestry)
         assert_non_overlapping(self.ancestry)
 
         if not self.is_alive:
