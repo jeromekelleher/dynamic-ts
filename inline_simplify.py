@@ -609,6 +609,34 @@ class Individual(object):
         if not self.is_alive:
             # print("U:",input_unary)
             # print("A:",self.ancestry)
+            # for i in input_unary:
+            #    if not i.child.is_alive and i.child not in self.children:
+            #        if len(i.child.children) == 0:
+            #            print(
+            #                "UNREA",
+            #                self,
+            #                i.child in self.children,
+            #                i.child,
+            #                i.child.parents,
+            #            )
+            #        if len(i.child.children) == 0 and self in i.child.parents:
+            #            print("UNREA", "removing", self, "from", i.child)
+            #            i.child.parents.remove(self)
+            # NOTE: this was a tricky point!
+            # Input unary ancestry goes away unless
+            # these conditions are met.
+            # Failing to filter these out gives "correct" results
+            # at the end.  You also get the mother of all memory
+            # leaks, as you're dragging all this extinct junk
+            # around for the entire simulation.
+            input_unary = [
+                i
+                for i in filter(
+                    lambda x: x.child.is_alive
+                    or (len(x.child.children) > 0 and self in x.child.parents),
+                    input_unary,
+                )
+            ]
             self.ancestry = sorted(input_unary + self.ancestry, key=lambda x: x.left)
 
         # NOTE: I think we have a subtle bug
@@ -795,7 +823,7 @@ class Simulator(object):
                 assert_non_overlapping(ind.ancestry)
                 for a in ind.ancestry:
                     if a.child is not ind and a.child not in reachable:
-                        print("UNREACHABLE UNARY", ind, "->", a.child)
+                        print("UNREACHABLE UNARY", ind, "->", a.child, a.child.parents)
             for child, segments in ind.children.items():
                 if child is not ind:
                     assert child in reachable, f"{child} {ind} {ind.children}"
