@@ -399,16 +399,16 @@ class Individual(object):
 
         # print("START = ", input_child_details)
 
-        current_ancestry_seg = 0
-        input_ancestry_len = len(self.ancestry)
-        output_ancestry = [Segment(a.left, a.right, a.child) for a in self.ancestry]
-        unaryness = []
+        # current_ancestry_seg = 0
+        # input_ancestry_len = len(self.ancestry)
+        # output_ancestry = [Segment(a.left, a.right, a.child) for a in self.ancestry]
+        # unaryness = []
 
-        for i, a in enumerate(output_ancestry):
-            if a.child is not self:
-                unaryness.append(i)
+        # for i, a in enumerate(output_ancestry):
+        #     if a.child is not self:
+        #         unaryness.append(i)
 
-        print("UNARYNESS = ", unaryness)
+        # print("UNARYNESS = ", unaryness)
 
         # NOTE: this is a placeholder for smartly detecting ancestry changes.
         # We are forced into "deep" copies here b/c some times (but not all the time!)
@@ -509,61 +509,61 @@ class Individual(object):
             # If an individual is alive it always has ancestry over the
             # full segment, so we don't overwrite this.
             if not self.is_alive:
-                xx = 0
-                for i, j in enumerate(output_ancestry):
-                    if j.right >= right:
-                        xx = i
-                        break
-                if xx < len(output_ancestry):
-                    if (
-                        left == output_ancestry[xx].left
-                        and right == output_ancestry[xx].right
-                        and mapped_ind is output_ancestry[xx].child
-                    ):
-                        # Yay, nothing to do.
-                        # print("EXACT MATCH", xx, left, right, mapped_ind, output_ancestry)
-                        pass
-                    elif (
-                        left == output_ancestry[xx].left
-                        and right == output_ancestry[xx].right
-                    ):
-                        print(
-                            "NODE DIFF",
-                            xx,
-                            left,
-                            right,
-                            mapped_ind,
-                            mapped_ind is self,
-                            output_ancestry,
-                        )
-                    elif mapped_ind is output_ancestry[xx].child:
-                        # NOTE: this should replace the coords of the segment with left/right.
-                        print(
-                            "COORD DIFF", xx, left, right, mapped_ind, output_ancestry
-                        )
-                    else:
-                        # This one's a bit tricky...
-                        # It always seems to happend AFTER A COORD DIFF
-                        print(
-                            "TOTAL DIFF",
-                            output_ancestry[xx].child is self,
-                            xx,
-                            left,
-                            right,
-                            mapped_ind,
-                            output_ancestry,
-                        )
-                else:
-                    if len(output_ancestry) > 0:
-                        print(
-                            "NEW SEG INTERESTING",
-                            output_ancestry,
-                            left,
-                            right,
-                            mapped_ind,
-                        )
-                    else:
-                        print("NEW SEG", output_ancestry, left, right, mapped_ind)
+                # xx = 0
+                # for i, j in enumerate(output_ancestry):
+                #     if j.right >= right:
+                #         xx = i
+                #         break
+                # if xx < len(output_ancestry):
+                #     if (
+                #         left == output_ancestry[xx].left
+                #         and right == output_ancestry[xx].right
+                #         and mapped_ind is output_ancestry[xx].child
+                #     ):
+                #         # Yay, nothing to do.
+                #         # print("EXACT MATCH", xx, left, right, mapped_ind, output_ancestry)
+                #         pass
+                #     elif (
+                #         left == output_ancestry[xx].left
+                #         and right == output_ancestry[xx].right
+                #     ):
+                #         print(
+                #             "NODE DIFF",
+                #             xx,
+                #             left,
+                #             right,
+                #             mapped_ind,
+                #             mapped_ind is self,
+                #             output_ancestry,
+                #         )
+                #     elif mapped_ind is output_ancestry[xx].child:
+                #         # NOTE: this should replace the coords of the segment with left/right.
+                #         print(
+                #             "COORD DIFF", xx, left, right, mapped_ind, output_ancestry
+                #         )
+                #     else:
+                #         # This one's a bit tricky...
+                #         # It always seems to happend AFTER A COORD DIFF
+                #         print(
+                #             "TOTAL DIFF",
+                #             output_ancestry[xx].child is self,
+                #             xx,
+                #             left,
+                #             right,
+                #             mapped_ind,
+                #             output_ancestry,
+                #         )
+                # else:
+                #     if len(output_ancestry) > 0:
+                #         print(
+                #             "NEW SEG INTERESTING",
+                #             output_ancestry,
+                #             left,
+                #             right,
+                #             mapped_ind,
+                #         )
+                #     else:
+                #         print("NEW SEG", output_ancestry, left, right, mapped_ind)
 
                 # FIXME: this is where the bug seems to be!
                 # If we make a big sim, and simply over-write
@@ -615,14 +615,14 @@ class Individual(object):
         # It seems possible that len(ouptut ancestry) can be < len(input ancestry)
         # If so, then the current logic leaves extra input ancestry segments "dangling"
 
-        uo = [i for i in self.ancestry if i.child is not self]
-        if input_unary != uo:
-            print("UNARY CHANGE")
-        print("UNARY_INPUT = ", input_unary)
-        print("UNARY OUTPUT = ", uo)
+        # uo = [i for i in self.ancestry if i.child is not self]
+        # if input_unary != uo:
+        #     print("UNARY CHANGE")
+        # print("UNARY_INPUT = ", input_unary)
+        # print("UNARY OUTPUT = ", uo)
 
-        print("INPUT ANC = ", input_ancestry)
-        print("SELF = ", self, input_ancestry == self.ancestry, self.ancestry)
+        # print("INPUT ANC = ", input_ancestry)
+        # print("SELF = ", self, input_ancestry == self.ancestry, self.ancestry)
         assert_non_overlapping(self.ancestry)
 
         if not self.is_alive:
@@ -793,6 +793,9 @@ class Simulator(object):
                 assert x.child == ind
             else:
                 assert_non_overlapping(ind.ancestry)
+                for a in ind.ancestry:
+                    if a.child is not ind and a.child not in reachable:
+                        print("UNREACHABLE UNARY", ind, "->", a.child)
             for child, segments in ind.children.items():
                 if child is not ind:
                     assert child in reachable, f"{child} {ind} {ind.children}"
