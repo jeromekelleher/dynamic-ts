@@ -429,6 +429,12 @@ class Individual(object):
             # print(left, right, X)
             if len(X) == 1:
                 mapped_ind = X[0].child
+                # NOTE: TODO: FIXME: WARNING:
+                # I think there's a bug here:
+                # If mapped_ind.is_alive, but not self.is_alive,
+                # we are failing to maintain a parent/child relationship.
+                # The only symptom of this (so far...) is a (rare) UNREACHABLE
+                # UNARY warning if we run with -v.
                 if verbose is True:
                     print("unary", mapped_ind, X[0])
                 # unary_mapped_ind.append(mapped_ind)
