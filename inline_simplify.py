@@ -492,6 +492,10 @@ class Individual(object):
                         )
                         x.child.parents.add(self)
                     else:
+                        if verbose is True:
+                            print(
+                                f"MAPPING COALESCENCE THRU UNARY {self}  -> {mapped_ind} -> {unary.child}"
+                            )
                         self.update_child_segments(
                             unary.child,
                             max(left, unary.left),
