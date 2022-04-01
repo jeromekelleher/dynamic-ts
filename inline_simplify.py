@@ -436,7 +436,7 @@ class Individual(object):
                     # need to guard against unary
                     # edges to the right of coalescences
                     if verbose is True:
-                        print("YES")
+                        print("YES", mapped_ind, self in mapped_ind.parents)
                     if mapped_ind not in self.children:
                         mapped_ind.parents.remove(self)
                     # if mapped_ind.is_alive and self.is_alive:
@@ -665,6 +665,10 @@ class Individual(object):
             if len(s) == 0:
                 # there are no coalescences from parent -> child
                 if self in c.parents:  # and not self.is_alive:
+                    if verbose is True:
+                        print(
+                            f"REMOVING {self} from parents of {c}, {c.is_alive}, {c.children}"
+                        )
                     c.parents.remove(self)
                 to_prune.append(c)
         for p in to_prune:
