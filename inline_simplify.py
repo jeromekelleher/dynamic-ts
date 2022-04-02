@@ -435,6 +435,8 @@ class Individual(object):
                 # we are failing to maintain a parent/child relationship.
                 # The only symptom of this (so far...) is a (rare) UNREACHABLE
                 # UNARY warning if we run with -v.
+                # The "trick" (perhaps one of many) is that we risk adding redundant
+                # ancestry down below...
                 if verbose is True:
                     print("unary", mapped_ind, X[0])
                 # unary_mapped_ind.append(mapped_ind)
