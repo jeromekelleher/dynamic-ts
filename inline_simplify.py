@@ -854,6 +854,8 @@ class Simulator(object):
                         # only in the input ancestry of a parent as a unary edge.  The current
                         # approach maintains this unary status, and it is also eventually cleaned up
                         # by the filter call in the simplification loop.
+                        # NOTE: attempts to do things like remove unary edges at the end of simplification leads to
+                        # incorrect topologies at the end...
                         # TODO: is there a better way?
                         if a.child.is_alive or len(a.child.children) > 0:
                             print(
