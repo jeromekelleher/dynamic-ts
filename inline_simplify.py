@@ -489,6 +489,9 @@ class Individual(object):
                                 )
                             else:
                                 assert mapped_ind is X[0].child
+                    elif mapped_ind.is_alive:
+                        if verbose is True:
+                            print(f"ALIVE UNARY {mapped_ind} descending from {self}")
             else:
                 mapped_ind = self
 
@@ -839,6 +842,25 @@ class Simulator(object):
                 assert_non_overlapping(ind.ancestry)
                 for a in ind.ancestry:
                     if a.child is not ind and a.child not in reachable:
+                        # NOTE: these unary nodes are necessary for mutation simplificaton,
+                        # "tskit-style". But they do not contribute to the ancestry of
+                        # the alive nodes, so we skip printing a warning for them.
+                        # Based on running with -v, these arise when an alive node is removed
+                        # from a parent's children but is retained in the ancestry as a unary edge.
+                        # This updating removes the ancestor from the alive node's parents set.
+                        # Things get "cleaned up" later, the next time simplification works
+                        # its way up to the parent node.
+                        # This can also happen when the descendant node is alive and present
+                        # only in the input ancestry of a parent as a unary edge.  The current
+                        # approach maintains this unary status, and it is also eventually cleaned up
+                        # by the filter call in the simplification loop.
+                        # TODO: is there a better way?
+                        if a.child.is_alive or len(a.child.children) > 0:
+                            print(
+                                "UNREACHABLE UNARY", ind, "->", a.child, a.child.parents
+                            )
+                        # NOTE: I'm keeping this print statement here b/c the comment
+                        # block above annoys me -- there must be a better way.
                         print("UNREACHABLE UNARY", ind, "->", a.child, a.child.parents)
             for child, segments in ind.children.items():
                 if child is not ind:
