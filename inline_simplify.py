@@ -2,7 +2,6 @@
 Prototype forward simulator where we simplify inline, using the Individual
 structures directly.
 """
-from bisect import bisect, bisect_right, bisect_left
 import argparse
 from dataclasses import dataclass
 import random
@@ -11,9 +10,7 @@ import heapq
 import sys
 from typing import List, Tuple, Dict, Optional
 
-import numpy as np
 import tskit
-from tskit.trees import Tree
 
 # Notes: this is not working yet. The idea is that we should be able to
 # maintain the data structure needed for simplify dynamically as (a)
