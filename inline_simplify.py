@@ -677,12 +677,13 @@ class Individual(object):
                 input_ancestry2[i].child = None
             for i in input_ancestry_unary_indexes:
                 assert input_ancestry2[i].child is not self
-                if input_ancestry2[i].child.is_alive or (
-                    len(input_ancestry2[i].child.children) > 0
-                    and self in input_ancestry2[i].child.parents
+                if not (
+                    input_ancestry2[i].child.is_alive
+                    or (
+                        len(input_ancestry2[i].child.children) > 0
+                        and self in input_ancestry2[i].child.parents
+                    )
                 ):
-                    pass
-                else:
                     input_ancestry2[i].child = None
 
             input_ancestry2 = sorted(
@@ -695,7 +696,15 @@ class Individual(object):
                 print("BEFORE", X)
                 print("BEFORE, U", Y)
                 print("BEFORE, U", Z)
-                print("OOPS", len(input_ancestry_non_unary_indexes), self, "|", self.ancestry, "->", input_ancestry2)
+                print(
+                    "OOPS",
+                    len(input_ancestry_non_unary_indexes),
+                    self,
+                    "|",
+                    self.ancestry,
+                    "->",
+                    input_ancestry2,
+                )
         # NOTE: I think we have a subtle bug
         # It seems possible that len(ouptut ancestry) can be < len(input ancestry)
         # If so, then the current logic leaves extra input ancestry segments "dangling"
