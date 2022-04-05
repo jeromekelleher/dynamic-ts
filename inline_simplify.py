@@ -411,6 +411,16 @@ class Individual(object):
         # We are forced into "deep" copies here b/c some times (but not all the time!)
         # we get burned by Python's reference model.
         input_ancestry = [Segment(a.left, a.right, a.child) for a in self.ancestry]
+        input_ancestry2 = [Segment(a.left, a.right, a.child) for a in self.ancestry]
+        input_ancestry_unary_indexes = [
+            i for i, j in enumerate(self.ancestry) if j.child is not self
+        ]
+        input_ancestry_non_unary_indexes = [
+            r
+            for r in reversed(
+                [i for i, j in enumerate(self.ancestry) if j.child is self]
+            )
+        ]
         input_children = {k: v for k, v in self.children.items()}
 
         input_unary = [
@@ -617,6 +627,13 @@ class Individual(object):
                 #     print("APPEND NEW", left, right, mapped_ind)
                 #     self.ancestry.append(Segment(left, right, mapped_ind))
                 self.ancestry.append(Segment(left, right, mapped_ind))
+                # NOTE: Working out how to do in-place updating...
+                if len(input_ancestry_non_unary_indexes) > 0:
+                    idx = input_ancestry_non_unary_indexes.pop()
+                    assert input_ancestry2[idx].child is self
+                    input_ancestry2[idx] = Segment(left, right, mapped_ind)
+                else:
+                    input_ancestry2.append(Segment(left, right, mapped_ind))
 
         if not self.is_alive:
             # print("U:",input_unary)
@@ -641,6 +658,7 @@ class Individual(object):
             # at the end.  You also get the mother of all memory
             # leaks, as you're dragging all this extinct junk
             # around for the entire simulation.
+            Y = [Segment(i.left, i.right, i.child) for i in input_unary]
             input_unary = [
                 i
                 for i in filter(
@@ -650,7 +668,34 @@ class Individual(object):
                 )
             ]
             self.ancestry = sorted(input_unary + self.ancestry, key=lambda x: x.left)
+            Z = [Segment(i.left, i.right, i.child) for i in input_unary]
 
+            # NOTE: working out how to update in place
+            X = [Segment(i.left, i.right, i.child) for i in input_ancestry2]
+            for i in input_ancestry_non_unary_indexes:
+                assert input_ancestry2[i].child is self
+                input_ancestry2[i].child = None
+            for i in input_ancestry_unary_indexes:
+                assert input_ancestry2[i].child is not self
+                if input_ancestry2[i].child.is_alive or (
+                    len(input_ancestry2[i].child.children) > 0
+                    and self in input_ancestry2[i].child.parents
+                ):
+                    pass
+                else:
+                    input_ancestry2[i].child = None
+
+            input_ancestry2 = sorted(
+                [i for i in filter(lambda x: x.child is not None, input_ancestry2)],
+                key=lambda x: x.left,
+            )
+
+            if self.ancestry != input_ancestry2:
+                # if Y != Z:
+                print("BEFORE", X)
+                print("BEFORE, U", Y)
+                print("BEFORE, U", Z)
+                print("OOPS", len(input_ancestry_non_unary_indexes), self, "|", self.ancestry, "->", input_ancestry2)
         # NOTE: I think we have a subtle bug
         # It seems possible that len(ouptut ancestry) can be < len(input ancestry)
         # If so, then the current logic leaves extra input ancestry segments "dangling"
