@@ -424,6 +424,8 @@ class Individual(object):
         # if not self.is_alive:
         #     self.ancestry.clear()
 
+        ancestry_change_detected = False
+
         for left, right, X in overlapping_segments(S):
             # print(left, right, X)
             if len(X) == 1:
@@ -623,8 +625,15 @@ class Individual(object):
                 if len(input_ancestry_non_unary_indexes) > 0:
                     idx = input_ancestry_non_unary_indexes.pop()
                     assert self.ancestry[idx].child is self
+                    if (
+                        left != self.ancestry[idx].left
+                        or right != self.ancestry[idx].right
+                        or mapped_ind is not self.ancestry[idx].child
+                    ):
+                        ancestry_change_detected = True
                     self.ancestry[idx] = Segment(left, right, mapped_ind)
                 else:
+                    ancestry_change_detected = True
                     self.ancestry.append(Segment(left, right, mapped_ind))
 
         if not self.is_alive:
@@ -667,6 +676,7 @@ class Individual(object):
             # X = [Segment(i.left, i.right, i.child) for i in input_ancestry2]
             for i in input_ancestry_non_unary_indexes:
                 assert self.ancestry[i].child is self
+                ancestry_change_detected = True
                 self.ancestry[i].child = None
             for i in input_ancestry_unary_indexes:
                 assert self.ancestry[i].child is not self
@@ -677,6 +687,7 @@ class Individual(object):
                         and self in self.ancestry[i].child.parents
                     )
                 ):
+                    ancestry_change_detected = True
                     self.ancestry[i].child = None
 
             self.ancestry = sorted(
@@ -739,6 +750,7 @@ class Individual(object):
             print("DONE")
             self.print_state()
         ancestry_changed = input_ancestry != self.ancestry
+        assert ancestry_change_detected == ancestry_changed
         if verbose is True:
             if ancestry_changed:
                 print("ANCESTRY HAS CHANGED")
