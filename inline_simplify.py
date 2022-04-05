@@ -421,14 +421,6 @@ class Individual(object):
                 [i for i, j in enumerate(self.ancestry) if j.child is self]
             )
         ]
-        input_children = {k: v for k, v in self.children.items()}
-
-        input_unary = [
-            Segment(i.left, i.right, i.child)
-            for i in self.ancestry
-            if i.child is not self
-        ]
-
         # if not self.is_alive:
         #     self.ancestry.clear()
 
@@ -747,7 +739,6 @@ class Individual(object):
             print("DONE")
             self.print_state()
         ancestry_changed = input_ancestry != self.ancestry
-        children_changed = input_children != self.children
         if verbose is True:
             if ancestry_changed:
                 print("ANCESTRY HAS CHANGED")
@@ -755,10 +746,6 @@ class Individual(object):
                 print("ANCESTRY HAS NOT CHANGED")
                 print(input_ancestry)
                 print(self.ancestry)
-            if children_changed:
-                print("CHILDREN HAS CHANGED")
-            else:
-                print("CHILDREN HAS NOT CHANGED")
             print("OUT")
 
         assert self not in self.parents
