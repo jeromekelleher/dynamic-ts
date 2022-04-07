@@ -239,10 +239,7 @@ class ChildInputDetails:
 def find_unary_overlap(left, right, child, require_unary=True) -> Optional[Segment]:
     for a in child.ancestry:
         if right > a.left and a.right > left:
-            if not require_unary:
-                return Segment(left, right, a.child)
-            elif a.child != child:
-                return Segment(left, right, a.child)
+            return Segment(left, right, a.child)
 
     return None
 
