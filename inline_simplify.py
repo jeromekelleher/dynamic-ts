@@ -522,103 +522,6 @@ class Individual(object):
             # If an individual is alive it always has ancestry over the
             # full segment, so we don't overwrite this.
             if not self.is_alive:
-                # xx = 0
-                # for i, j in enumerate(output_ancestry):
-                #     if j.right >= right:
-                #         xx = i
-                #         break
-                # if xx < len(output_ancestry):
-                #     if (
-                #         left == output_ancestry[xx].left
-                #         and right == output_ancestry[xx].right
-                #         and mapped_ind is output_ancestry[xx].child
-                #     ):
-                #         # Yay, nothing to do.
-                #         # print("EXACT MATCH", xx, left, right, mapped_ind, output_ancestry)
-                #         pass
-                #     elif (
-                #         left == output_ancestry[xx].left
-                #         and right == output_ancestry[xx].right
-                #     ):
-                #         print(
-                #             "NODE DIFF",
-                #             xx,
-                #             left,
-                #             right,
-                #             mapped_ind,
-                #             mapped_ind is self,
-                #             output_ancestry,
-                #         )
-                #     elif mapped_ind is output_ancestry[xx].child:
-                #         # NOTE: this should replace the coords of the segment with left/right.
-                #         print(
-                #             "COORD DIFF", xx, left, right, mapped_ind, output_ancestry
-                #         )
-                #     else:
-                #         # This one's a bit tricky...
-                #         # It always seems to happend AFTER A COORD DIFF
-                #         print(
-                #             "TOTAL DIFF",
-                #             output_ancestry[xx].child is self,
-                #             xx,
-                #             left,
-                #             right,
-                #             mapped_ind,
-                #             output_ancestry,
-                #         )
-                # else:
-                #     if len(output_ancestry) > 0:
-                #         print(
-                #             "NEW SEG INTERESTING",
-                #             output_ancestry,
-                #             left,
-                #             right,
-                #             mapped_ind,
-                #         )
-                #     else:
-                #         print("NEW SEG", output_ancestry, left, right, mapped_ind)
-
-                # FIXME: this is where the bug seems to be!
-                # If we make a big sim, and simply over-write
-                # all input ancestry (clear, then append), we
-                # seem to be able to run a "skip parents we don't
-                # need to process" sim through to commpletion.
-                # NOTE: naive over-writes as described above
-                # fail to maintain UNARY segments present
-                # on an unput node.
-                # NOTE: this bit is DROPPING input unary segments.
-                #       Fixing this will be fiddly!
-                # NOTE: the general problem is to update coalescences
-                #       without dropping/over-writing unary transmissions
-                #       incorrectly. This is the hard problem!
-                # new_segment = True
-                # while (
-                #     current_ancestry_seg < input_ancestry_len
-                #     and self.ancestry[current_ancestry_seg].left < left
-                # ):
-                #     current_ancestry_seg += 1
-                # print("HERE", current_ancestry_seg, input_ancestry_len, left, right)
-                # if current_ancestry_seg < input_ancestry_len:
-                #     i = self.ancestry[current_ancestry_seg]
-                #     if verbose is True:
-                #         print("ANCUPDATE", i, left, right, mapped_ind)
-                #     if i.right > left and right > i.left:
-                #         print("EDIT", left, right, i.left, i.right, mapped_ind)
-                #         i.left = max(i.left, left)
-                #         i.right = min(i.right, right)
-                #         i.child = mapped_ind
-                #         new_segment = False
-                #     else:  # Segment is replaced...
-                #         print("REPLACE", left, right, mapped_ind)
-                #         i.left = left
-                #         i.right = right
-                #         i.child = mapped_ind
-                #         new_segment = False
-                # if new_segment:
-                #     print("APPEND NEW", left, right, mapped_ind)
-                #     self.ancestry.append(Segment(left, right, mapped_ind))
-                # self.ancestry.append(Segment(left, right, mapped_ind))
-                # NOTE: Working out how to do in-place updating...
                 if len(input_ancestry_non_unary_indexes) > 0:
                     idx = input_ancestry_non_unary_indexes.pop()
                     assert self.ancestry[idx].child is self
@@ -634,43 +537,6 @@ class Individual(object):
                     self.ancestry.append(Segment(left, right, mapped_ind))
 
         if not self.is_alive:
-            # print("U:",input_unary)
-            # print("A:",self.ancestry)
-            # for i in input_unary:
-            #    if not i.child.is_alive and i.child not in self.children:
-            #        if len(i.child.children) == 0:
-            #            print(
-            #                "UNREA",
-            #                self,
-            #                i.child in self.children,
-            #                i.child,
-            #                i.child.parents,
-            #            )
-            #        if len(i.child.children) == 0 and self in i.child.parents:
-            #            print("UNREA", "removing", self, "from", i.child)
-            #            i.child.parents.remove(self)
-            # NOTE: this was a tricky point!
-            # Input unary ancestry goes away unless
-            # these conditions are met.
-            # Failing to filter these out gives "correct" results
-            # at the end.  You also get the mother of all memory
-            # leaks, as you're dragging all this extinct junk
-            # around for the entire simulation.
-
-            # Y = [Segment(i.left, i.right, i.child) for i in input_unary]
-            # input_unary = [
-            #     i
-            #     for i in filter(
-            #         lambda x: x.child.is_alive
-            #         or (len(x.child.children) > 0 and self in x.child.parents),
-            #         input_unary,
-            #     )
-            # ]
-            # self.ancestry = sorted(input_unary + self.ancestry, key=lambda x: x.left)
-            # Z = [Segment(i.left, i.right, i.child) for i in input_unary]
-
-            # NOTE: working out how to update in place
-            # X = [Segment(i.left, i.right, i.child) for i in input_ancestry2]
             for i in input_ancestry_non_unary_indexes:
                 assert self.ancestry[i].child is self
                 ancestry_change_detected = True
@@ -692,32 +558,6 @@ class Individual(object):
                 key=lambda x: x.left,
             )
 
-            # if self.ancestry != input_ancestry2:
-            #     # if Y != Z:
-            #     print("BEFORE", X)
-            #     print("BEFORE, U", Y)
-            #     print("BEFORE, U", Z)
-            #     print(
-            #         "OOPS",
-            #         len(input_ancestry_non_unary_indexes),
-            #         self,
-            #         "|",
-            #         self.ancestry,
-            #         "->",
-            #         input_ancestry2,
-            #     )
-        # NOTE: I think we have a subtle bug
-        # It seems possible that len(ouptut ancestry) can be < len(input ancestry)
-        # If so, then the current logic leaves extra input ancestry segments "dangling"
-
-        # uo = [i for i in self.ancestry if i.child is not self]
-        # if input_unary != uo:
-        #     print("UNARY CHANGE")
-        # print("UNARY_INPUT = ", input_unary)
-        # print("UNARY OUTPUT = ", uo)
-
-        # print("INPUT ANC = ", input_ancestry)
-        # print("SELF = ", self, input_ancestry == self.ancestry, self.ancestry)
         assert_non_overlapping(self.ancestry)
 
         if not self.is_alive:
