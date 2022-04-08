@@ -443,8 +443,6 @@ class Individual(object):
                     # edges to the right of coalescences
                     if verbose is True:
                         print("YES", mapped_ind, self in mapped_ind.parents)
-                    if mapped_ind not in self.children:
-                        mapped_ind.parents.remove(self)
                     # if mapped_ind.is_alive and self.is_alive:
                     if self.is_alive:
                         if mapped_ind.is_alive:
