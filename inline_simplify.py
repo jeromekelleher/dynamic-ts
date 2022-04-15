@@ -230,18 +230,34 @@ class Segment(object):
         return self.left == o.left and self.right == o.right and self.child == o.child
 
 
+class AncestryOverlap(object):
+    """
+    An ancestral segment mapping a given individual to a half-open genomic
+    interval [left, right).
+    """
+
+    def __init__(self, left, right, child, mapped_node):
+        self.left = left
+        self.right = right
+        self.child = child
+        self.mapped_node = mapped_node
+
+    def __repr__(self):
+        return repr((self.left, self.right, self.child, self.mapped_node))
+
+    def __eq__(self, o):
+        return (
+            self.left == o.left
+            and self.right == o.right
+            and self.child == o.child
+            and self.mapped_node == o.mapped_node
+        )
+
+
 @dataclass
 class ChildInputDetails:
     input_number_segs: int
     output_number_segs: int
-
-
-def find_unary_overlap(left, right, child, require_unary=True) -> Optional[Segment]:
-    for a in child.ancestry:
-        if right > a.left and a.right > left:
-            return Segment(left, right, a.child)
-
-    return None
 
 
 class Individual(object):
@@ -362,7 +378,9 @@ class Individual(object):
             for e in intervals:
                 for x in child.ancestry:
                     if x.right > e.left and e.right > x.left:
-                        y = Segment(max(x.left, e.left), min(x.right, e.right), child)
+                        y = AncestryOverlap(
+                            max(x.left, e.left), min(x.right, e.right), child, x.child
+                        )
                         S.append(y)
         return S
 
@@ -472,19 +490,15 @@ class Individual(object):
                                     "NEED TO PROCESS UNARY THRU DEAD UNARY NODE",
                                     mapped_ind,
                                 )
-                            unary = find_unary_overlap(left, right, mapped_ind, False)
-                            if unary is not None:
-                                mapped_ind = unary.child
-                                if self not in mapped_ind.parents:
-                                    mapped_ind.parents.add(self)
-                                self.update_child_segments(
-                                    mapped_ind,
-                                    max(left, unary.left),
-                                    min(right, unary.right),
-                                    input_child_details,
-                                )
-                            else:
-                                assert mapped_ind is X[0].child
+                            mapped_ind = X[0].mapped_node
+                            if self not in mapped_ind.parents:
+                                mapped_ind.parents.add(self)
+                            self.update_child_segments(
+                                mapped_ind,
+                                left,
+                                right,
+                                input_child_details,
+                            )
                     elif mapped_ind.is_alive:
                         if verbose is True:
                             print(f"ALIVE UNARY {mapped_ind} descending from {self}")
@@ -492,25 +506,10 @@ class Individual(object):
                 mapped_ind = self
 
                 for x in X:
-                    unary = find_unary_overlap(left, right, x.child)
-                    if unary is None:
-                        self.update_child_segments(
-                            x.child, left, right, input_child_details
-                        )
-                        x.child.parents.add(self)
-                    else:
-                        if verbose is True:
-                            print(
-                                f"MAPPING COALESCENCE THRU UNARY {self}  -> {mapped_ind} -> {unary.child}"
-                            )
-                        self.update_child_segments(
-                            unary.child,
-                            max(left, unary.left),
-                            min(right, unary.right),
-                            input_child_details,
-                        )
-                        assert unary.child in self.children
-                        unary.child.parents.add(self)
+                    self.update_child_segments(
+                        x.mapped_node, left, right, input_child_details
+                    )
+                    x.mapped_node.parents.add(self)
 
                 if mapped_ind in self.children:
                     # NOTE: this is a really annoyting gotcha:
