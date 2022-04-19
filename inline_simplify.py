@@ -633,7 +633,7 @@ class Simulator(object):
         self.population = [Individual(self.time, i) for i in range(population_size)]
         self.next_individual_index = population_size
         self.transmissions: List[TransmissionInfo] = []
-        self.leftover_alive = []
+        # self.leftover_alive = []
 
         # Everyone starts out alive, so has to map to self
         # (Overlapping generations fails fast if this isn't done)
@@ -768,38 +768,46 @@ class Simulator(object):
         for _ in range(num_generations):
             self.run_generation(verbose)
 
-        for i in self.population:
-            if i.is_alive:
-                a = i in [t.parent for t in self.transmissions]
-                b = i in [t.child for t in self.transmissions]
-                if not a and not b:
-                    self.leftover_alive.append(i)
+        # for i in self.population:
+        #     if i.is_alive:
+        #         a = i in [t.parent for t in self.transmissions]
+        #         b = i in [t.child for t in self.transmissions]
+        #         if not a and not b:
+        #             self.leftover_alive.append(i)
 
     def make_samples_list_for_tskit(self, node_map) -> List[int]:
         rv = []
-        for i in self.transmissions:
-            for j in [i.parent, i.child]:
-                if j.is_alive and node_map[j.index] not in rv:
-                    rv.append(node_map[j.index])
-        for i in self.leftover_alive:
-            assert i.is_alive
-            assert node_map[i.index] not in rv
-            rv.append(node_map[i.index])
+        for i in self.population:
+            if i.is_alive and node_map[i.index] not in rv:
+                rv.append(node_map[i.index])
+        return sorted(rv)
+        # for i in self.transmissions:
+        #     for j in [i.parent, i.child]:
+        #         if j.is_alive and node_map[j.index] not in rv:
+        #             rv.append(node_map[j.index])
+        # for i in self.leftover_alive:
+        #     assert i.is_alive
+        #     assert node_map[i.index] not in rv
+        #     rv.append(node_map[i.index])
         return sorted(rv)
 
     def get_alive_node_indexes_and_times(self) -> List[Tuple[int, int]]:
         indexes = set()
         rv = []
-        for i in self.transmissions:
-            for j in [i.parent, i.child]:
-                if j.is_alive and j.index not in indexes:
-                    rv.append((j.index, j.time))
-                    indexes.add(j.index)
+        for i in self.population:
+            if i.is_alive and i.index not in indexes:
+                rv.append((i.index, i.time))
+                indexes.add(i.index)
+        # for i in self.transmissions:
+        #     for j in [i.parent, i.child]:
+        #         if j.is_alive and j.index not in indexes:
+        #             rv.append((j.index, j.time))
+        #             indexes.add(j.index)
 
-        for i in self.leftover_alive:
-            assert i.index not in indexes
-            rv.append((i.index, i.time))
-            indexes.add(i.index)
+        # for i in self.leftover_alive:
+        #     assert i.index not in indexes
+        #     rv.append((i.index, i.time))
+        #     indexes.add(i.index)
 
         return rv
 
@@ -820,10 +828,13 @@ class Simulator(object):
                 if n.index not in node_data:
                     node_data[n.index] = n.time
 
-        for i in self.leftover_alive:
-            node_data[i.index] = i.time
+        for i in self.population:
+            if i.is_alive:
+                node_data[i.index] = i.time
 
         alive_nodes = self.get_alive_node_indexes_and_times()
+
+        assert all([a[0] in node_data for a in alive_nodes])
 
         node_map = {}
         for i, t in node_data.items():
