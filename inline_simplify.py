@@ -442,7 +442,9 @@ class Individual(object):
         ancestry_change_detected = False
 
         for left, right, X in overlapping_segments(S):
-            # print(left, right, X)
+            assert right > left
+            if verbose is True:
+                print("ANCESTRY info = ", left, right, X)
             if len(X) == 1:
                 mapped_ind = X[0].child
                 # NOTE: TODO: FIXME: WARNING:
@@ -550,10 +552,15 @@ class Individual(object):
                     ancestry_change_detected = True
                     self.ancestry[i].child = None
 
+            xxx = any([x.child is None for x in self.ancestry])
+
             self.ancestry = sorted(
                 [i for i in filter(lambda x: x.child is not None, self.ancestry)],
                 key=lambda x: x.left,
             )
+
+            if verbose is True and xxx is True:
+                print("INPUT UNARY ANCESTRY REMOVED")
 
         assert_non_overlapping(self.ancestry)
 
