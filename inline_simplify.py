@@ -412,7 +412,8 @@ class Individual(object):
         # print("START = ", input_child_details)
 
         # current_ancestry_seg = 0
-        # input_ancestry_len = len(self.ancestry)
+        input_ancestry_len = len(self.ancestry)
+        output_ancestry_index = 0
         # output_ancestry = [Segment(a.left, a.right, a.child) for a in self.ancestry]
         # unaryness = []
 
@@ -426,16 +427,16 @@ class Individual(object):
         # We are forced into "deep" copies here b/c some times (but not all the time!)
         # we get burned by Python's reference model.
         input_ancestry = [Segment(a.left, a.right, a.child) for a in self.ancestry]
-        # input_ancestry2 = [Segment(a.left, a.right, a.child) for a in self.ancestry]
-        input_ancestry_unary_indexes = [
-            i for i, j in enumerate(self.ancestry) if j.child is not self
-        ]
-        input_ancestry_non_unary_indexes = [
-            r
-            for r in reversed(
-                [i for i, j in enumerate(self.ancestry) if j.child is self]
-            )
-        ]
+        # # input_ancestry2 = [Segment(a.left, a.right, a.child) for a in self.ancestry]
+        # input_ancestry_unary_indexes = [
+        #     i for i, j in enumerate(self.ancestry) if j.child is not self
+        # ]
+        # input_ancestry_non_unary_indexes = [
+        #     r
+        #     for r in reversed(
+        #         [i for i, j in enumerate(self.ancestry) if j.child is self]
+        #     )
+        # ]
         # if not self.is_alive:
         #     self.ancestry.clear()
 
@@ -521,46 +522,61 @@ class Individual(object):
             # If an individual is alive it always has ancestry over the
             # full segment, so we don't overwrite this.
             if not self.is_alive:
-                if len(input_ancestry_non_unary_indexes) > 0:
-                    idx = input_ancestry_non_unary_indexes.pop()
-                    assert self.ancestry[idx].child is self
-                    if (
-                        left != self.ancestry[idx].left
-                        or right != self.ancestry[idx].right
-                        or mapped_ind is not self.ancestry[idx].child
-                    ):
+                seg = Segment(left, right, mapped_ind)
+                if output_ancestry_index < input_ancestry_len:
+                    if self.ancestry[output_ancestry_index] != seg:
+                        self.ancestry[output_ancestry_index] = seg
                         ancestry_change_detected = True
-                    self.ancestry[idx] = Segment(left, right, mapped_ind)
                 else:
                     ancestry_change_detected = True
-                    self.ancestry.append(Segment(left, right, mapped_ind))
+                    self.ancestry.append(seg)
+                output_ancestry_index += 1
+
+                # if len(input_ancestry_non_unary_indexes) > 0:
+                #     idx = input_ancestry_non_unary_indexes.pop()
+                #     assert self.ancestry[idx].child is self
+                #     if (
+                #         left != self.ancestry[idx].left
+                #         or right != self.ancestry[idx].right
+                #         or mapped_ind is not self.ancestry[idx].child
+                #     ):
+                #         ancestry_change_detected = True
+                #     self.ancestry[idx] = Segment(left, right, mapped_ind)
+                # else:
+                #     ancestry_change_detected = True
+                #     self.ancestry.append(Segment(left, right, mapped_ind))
+
+        # if not self.is_alive:
+        #     for i in input_ancestry_non_unary_indexes:
+        #         assert self.ancestry[i].child is self
+        #         ancestry_change_detected = True
+        #         self.ancestry[i].child = None
+        #     for i in input_ancestry_unary_indexes:
+        #         assert self.ancestry[i].child is not self
+        #         if not (
+        #             self.ancestry[i].child.is_alive
+        #             or (
+        #                 len(self.ancestry[i].child.children) > 0
+        #                 and self in self.ancestry[i].child.parents
+        #             )
+        #         ):
+        #             ancestry_change_detected = True
+        #             self.ancestry[i].child = None
+
+        #     xxx = any([x.child is None for x in self.ancestry])
+
+        #     self.ancestry = sorted(
+        #         [i for i in filter(lambda x: x.child is not None, self.ancestry)],
+        #         key=lambda x: x.left,
+        #     )
+
+        #     if verbose is True and xxx is True:
+        #         print("INPUT UNARY ANCESTRY REMOVED")
 
         if not self.is_alive:
-            for i in input_ancestry_non_unary_indexes:
-                assert self.ancestry[i].child is self
+            if output_ancestry_index < input_ancestry_len:
                 ancestry_change_detected = True
-                self.ancestry[i].child = None
-            for i in input_ancestry_unary_indexes:
-                assert self.ancestry[i].child is not self
-                if not (
-                    self.ancestry[i].child.is_alive
-                    or (
-                        len(self.ancestry[i].child.children) > 0
-                        and self in self.ancestry[i].child.parents
-                    )
-                ):
-                    ancestry_change_detected = True
-                    self.ancestry[i].child = None
-
-            xxx = any([x.child is None for x in self.ancestry])
-
-            self.ancestry = sorted(
-                [i for i in filter(lambda x: x.child is not None, self.ancestry)],
-                key=lambda x: x.left,
-            )
-
-            if verbose is True and xxx is True:
-                print("INPUT UNARY ANCESTRY REMOVED")
+                del self.ancestry[output_ancestry_index:]
 
         assert_non_overlapping(self.ancestry)
 
@@ -591,7 +607,14 @@ class Individual(object):
             print("DONE")
             self.print_state()
         ancestry_changed = input_ancestry != self.ancestry
-        assert ancestry_change_detected == ancestry_changed
+
+        if ancestry_changed != ancestry_change_detected:
+            print("FOO")
+            print(ancestry_changed, ancestry_change_detected)
+            print(input_ancestry)
+            print(self.ancestry)
+            print("BAR")
+        # assert ancestry_change_detected == ancestry_changed
         if verbose is True:
             if ancestry_changed:
                 print("ANCESTRY HAS CHANGED")
