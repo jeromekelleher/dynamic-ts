@@ -457,6 +457,8 @@ class Individual(object):
                 ancestry_change_detected = True
                 del self.ancestry[output_ancestry_index:]
 
+            # TODO: squash output ancestry?
+
         assert_non_overlapping(self.ancestry)
 
         for c in self.children.keys():
