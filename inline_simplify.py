@@ -187,19 +187,20 @@ def propagate_upwards(ind, verbose):
         # print("before")
         # ind.print_state()
         # print(f"updating {ind}")
-        ind.update_ancestry(verbose)
+        changed = ind.update_ancestry(verbose)
         # print("after")
         # ind.print_state()
-        for parent in ind.parents:
-            # NOTE: naively adding all parents to
-            # the stack results in double-processing some
-            # parents b/c we often process > 1 child node
-            # before getting to the parent, causing a big
-            # performance loss.
-            if parent not in stack:
-                assert parent.time < ind.time
-                # stack.append(parent)
-                heapq.heappush(stack, parent)
+        if changed or ind.is_alive:
+            for parent in ind.parents:
+                # NOTE: naively adding all parents to
+                # the stack results in double-processing some
+                # parents b/c we often process > 1 child node
+                # before getting to the parent, causing a big
+                # performance loss.
+                if parent not in stack:
+                    assert parent.time < ind.time
+                    # stack.append(parent)
+                    heapq.heappush(stack, parent)
 
 
 def record_inheritance(left, right, parent, child):
@@ -381,8 +382,6 @@ class Individual(object):
         input_ancestry_len = len(self.ancestry)
         output_ancestry_index = 0
 
-        input_ancestry = [Segment(a.left, a.right, a.child) for a in self.ancestry]
-
         ancestry_change_detected = False
 
         for k in self.children.keys():
@@ -464,22 +463,12 @@ class Individual(object):
         if verbose is True:
             print("DONE")
             self.print_state()
-        ancestry_changed = input_ancestry != self.ancestry
 
-        if ancestry_changed != ancestry_change_detected:
-            print("FOO")
-            print(ancestry_changed, ancestry_change_detected)
-            print(input_ancestry)
-            print(self.ancestry)
-            print("BAR")
-        # assert ancestry_change_detected == ancestry_changed
         if verbose is True:
-            if ancestry_changed:
+            if ancestry_change_detected:
                 print("ANCESTRY HAS CHANGED")
             else:
                 print("ANCESTRY HAS NOT CHANGED")
-                print(input_ancestry)
-                print(self.ancestry)
             print("OUT")
 
         assert self not in self.parents
@@ -489,7 +478,8 @@ class Individual(object):
         # if this is true or ind.is_alive, we'll get
         # the same trees out for small sims but then get
         # assertions on larger sims.
-        # rv = ancestry_changed or len(self.ancestry) == 0
+        rv = ancestry_change_detected or len(self.ancestry) == 0
+        return rv
 
 
 @dataclass
@@ -631,9 +621,6 @@ class Simulator(object):
                             print(
                                 "UNREACHABLE UNARY", ind, "->", a.child, a.child.parents
                             )
-                        # NOTE: I'm keeping this print statement here b/c the comment
-                        # block above annoys me -- there must be a better way.
-                        print("UNREACHABLE UNARY", ind, "->", a.child, a.child.parents)
             for child, segments in ind.children.items():
                 if child is not ind:
                     assert child in reachable, f"{child} {ind} {ind.children}"
