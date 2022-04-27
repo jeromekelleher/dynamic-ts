@@ -318,13 +318,18 @@ class Individual(object):
         self,
         child,
         left,
-        right,  # details: Dict["Individual", ChildInputDetails]
+        right,
     ):
-        # NOTE: this is identical to add_child_segment, but the idea
-        # is that maybe we can squash edges here?
-        seg = Segment(left, right, None)
-
-        self.children[child].append(seg)
+        segs = self.children[child]
+        if len(segs) > 0:
+            if segs[-1].right == left:
+                segs[-1].right = right
+            else:
+                seg = Segment(left, right, None)
+                segs.append(seg)
+        else:
+            seg = Segment(left, right, None)
+            segs.append(seg)
 
     def remove_sample_mapping(self, sequence_length):
         """
