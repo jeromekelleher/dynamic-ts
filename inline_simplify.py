@@ -319,37 +319,11 @@ class Individual(object):
         left,
         right,  # details: Dict["Individual", ChildInputDetails]
     ):
-        # TODO: seems like we should be able to "squash" edges on the fly here?
-        # if child not in details:
-        #     details[child] = ChildInputDetails(0, 0)
-
+        # NOTE: this is identical to add_child_segment, but the idea
+        # is that maybe we can squash edges here?
         seg = Segment(left, right, None)
 
         self.children[child].append(seg)
-
-        # if details[child].output_number_segs < details[child].input_number_segs:
-        #     n = details[child].output_number_segs
-        #     if n > 0:
-        #         if self.children[child][n - 1].right == left:
-        #             self.children[child][n - 1].right = right
-        #         else:
-        #             self.children[child][n] = seg
-        #             details[child].output_number_segs += 1
-        #     else:
-        #         self.children[child][n] = seg
-        #         details[child].output_number_segs += 1
-        # else:
-        #     n = details[child].output_number_segs
-        #     assert n == len(self.children[child])
-        #     if n > 0:
-        #         if self.children[child][n - 1].right == left:
-        #             self.children[child][n - 1].right = right
-        #         else:
-        #             self.children[child].append(seg)
-        #             details[child].output_number_segs += 1
-        #     else:
-        #         self.children[child].append(seg)
-        #         details[child].output_number_segs += 1
 
     def remove_sample_mapping(self, sequence_length):
         """
@@ -404,46 +378,10 @@ class Individual(object):
                 print(f"child {c} has ancestry {c.ancestry}, children {c.children}")
             self.print_state()
 
-        # Do not "bulk" clear: we need to know
-        # if current children are no longer
-        # children when done.
-        # for c, s in self.children.items():
-        #     s.clear()
-
-        # input_child_details = {
-        #     c: ChildInputDetails(len(s), 0) for c, s in self.children.items()
-        # }
-
-        # print("START = ", input_child_details)
-
-        # current_ancestry_seg = 0
         input_ancestry_len = len(self.ancestry)
         output_ancestry_index = 0
-        # output_ancestry = [Segment(a.left, a.right, a.child) for a in self.ancestry]
-        # unaryness = []
 
-        # for i, a in enumerate(output_ancestry):
-        #     if a.child is not self:
-        #         unaryness.append(i)
-
-        # print("UNARYNESS = ", unaryness)
-
-        # NOTE: this is a placeholder for smartly detecting ancestry changes.
-        # We are forced into "deep" copies here b/c some times (but not all the time!)
-        # we get burned by Python's reference model.
         input_ancestry = [Segment(a.left, a.right, a.child) for a in self.ancestry]
-        # # input_ancestry2 = [Segment(a.left, a.right, a.child) for a in self.ancestry]
-        # input_ancestry_unary_indexes = [
-        #     i for i, j in enumerate(self.ancestry) if j.child is not self
-        # ]
-        # input_ancestry_non_unary_indexes = [
-        #     r
-        #     for r in reversed(
-        #         [i for i, j in enumerate(self.ancestry) if j.child is self]
-        #     )
-        # ]
-        # if not self.is_alive:
-        #     self.ancestry.clear()
 
         ancestry_change_detected = False
 
@@ -458,68 +396,29 @@ class Individual(object):
                 print("ANCESTRY info = ", left, right, X)
             if len(X) == 1:
                 mapped_ind = X[0].child
-                # NOTE: TODO: FIXME: WARNING:
-                # I think there's a bug here:
-                # If mapped_ind.is_alive, but not self.is_alive,
-                # we are failing to maintain a parent/child relationship.
-                # The only symptom of this (so far...) is a (rare) UNREACHABLE
-                # UNARY warning if we run with -v.
-                # The "trick" (perhaps one of many) is that we risk adding redundant
-                # ancestry down below...
                 if verbose is True:
                     print("unary", mapped_ind, X[0])
-                    # unary_mapped_ind.append(mapped_ind)
-                    # if self in mapped_ind.parents:
-                    #     # need to guard against unary
-                    #     # edges to the right of coalescences
-                    #     if verbose is True:
-                    #         print("YES", mapped_ind, self in mapped_ind.parents)
-                    #     # if mapped_ind.is_alive and self.is_alive:
                 if self.is_alive:
                     if mapped_ind.is_alive:
                         if verbose is True:
                             print("SEG ADDING", mapped_ind)
-                        # self.add_child_segment(mapped_ind, left, right)
                         self.update_child_segments(
                             mapped_ind,
                             left,
                             right,  # input_child_details
                         )
-
-                        # mapped_ind.parents.add(self)
-                    # elif self.is_alive:
                     else:
-                        # NOTE: TODO: FIXME:
-                        # I am not happy with this logic.
-                        # We are taking a unary transmission and moving
-                        # it pastwards in time.  In general, we want unary
-                        # transmissions to derive from the most recent possible node,
-                        # so that things like mutation simplification cannot cause
-                        # "mutation time travel"
-                        # A counter argument is that we get incorrect topologies out
-                        # withouth this logic, so it is possible that I'm confusing myself
-                        # at the moment.
-                        # Aha -- this happens when a descandant node coalesced on this Segment
-                        # but no longer does, which pushes the ancestry of that Segment pastwards.
-                        # Aha, revisited -- this is handling the "special" case of descendants
-                        # of "alive" nodes, which is similar to "sample" nodes.
                         if verbose is True:
                             print(
                                 "NEED TO PROCESS UNARY THRU DEAD UNARY NODE",
                                 mapped_ind,
                             )
                         mapped_ind = X[0].mapped_node
-                        # if self not in mapped_ind.parents:
-                        #     mapped_ind.parents.add(self)
                         self.update_child_segments(
                             mapped_ind,
                             left,
                             right,
-                            # input_child_details,
                         )
-                    # elif mapped_ind.is_alive:
-                    #     if verbose is True:
-                    #         print(f"ALIVE UNARY {mapped_ind} descending from {self}")
             else:
                 mapped_ind = self
 
@@ -549,47 +448,6 @@ class Individual(object):
                     self.ancestry.append(seg)
                 output_ancestry_index += 1
 
-                # if len(input_ancestry_non_unary_indexes) > 0:
-                #     idx = input_ancestry_non_unary_indexes.pop()
-                #     assert self.ancestry[idx].child is self
-                #     if (
-                #         left != self.ancestry[idx].left
-                #         or right != self.ancestry[idx].right
-                #         or mapped_ind is not self.ancestry[idx].child
-                #     ):
-                #         ancestry_change_detected = True
-                #     self.ancestry[idx] = Segment(left, right, mapped_ind)
-                # else:
-                #     ancestry_change_detected = True
-                #     self.ancestry.append(Segment(left, right, mapped_ind))
-
-        # if not self.is_alive:
-        #     for i in input_ancestry_non_unary_indexes:
-        #         assert self.ancestry[i].child is self
-        #         ancestry_change_detected = True
-        #         self.ancestry[i].child = None
-        #     for i in input_ancestry_unary_indexes:
-        #         assert self.ancestry[i].child is not self
-        #         if not (
-        #             self.ancestry[i].child.is_alive
-        #             or (
-        #                 len(self.ancestry[i].child.children) > 0
-        #                 and self in self.ancestry[i].child.parents
-        #             )
-        #         ):
-        #             ancestry_change_detected = True
-        #             self.ancestry[i].child = None
-
-        #     xxx = any([x.child is None for x in self.ancestry])
-
-        #     self.ancestry = sorted(
-        #         [i for i in filter(lambda x: x.child is not None, self.ancestry)],
-        #         key=lambda x: x.left,
-        #     )
-
-        #     if verbose is True and xxx is True:
-        #         print("INPUT UNARY ANCESTRY REMOVED")
-
         if not self.is_alive:
             if output_ancestry_index < input_ancestry_len:
                 ancestry_change_detected = True
@@ -600,26 +458,6 @@ class Individual(object):
         for c in self.children.keys():
             c.parents.add(self)
 
-        # if not self.is_alive:
-        #     for c, segments in self.children.items():
-        #         if c is not self:
-        #             if len(segments) > 0:
-        #                 assert self in c.parents, f"{self} {c} {self.ancestry}"
-        # to_prune = []
-        # for c, s in self.children.items():
-        #     # Not the most Pythonic, but it is a true in-place edit
-        #     del s[input_child_details[c].output_number_segs :]
-        #     if len(s) == 0:
-        #         # there are no coalescences from parent -> child
-        #         if self in c.parents:  # and not self.is_alive:
-        #             if verbose is True:
-        #                 print(
-        #                     f"REMOVING {self} from parents of {c}, {c.is_alive}, {c.children}"
-        #                 )
-        #             c.parents.remove(self)
-        #         to_prune.append(c)
-        # for p in to_prune:
-        #     self.children.pop(p, None)
         for a in self.ancestry:
             if a.child in self.children and a.child is not self:
                 assert self in a.child.parents, f"{self} {a} {self.ancestry}"
@@ -651,10 +489,7 @@ class Individual(object):
         # if this is true or ind.is_alive, we'll get
         # the same trees out for small sims but then get
         # assertions on larger sims.
-        # NOTE: we also need to account for a concept of "all ancestry
-        # segments are unary" in the return value.
-        # NOTE: need to look into "absorbed any unary" idea into the return value.
-        # rv = ancestry_changed or children_changed or len(self.ancestry) == 0
+        # rv = ancestry_changed or len(self.ancestry) == 0
 
 
 @dataclass
