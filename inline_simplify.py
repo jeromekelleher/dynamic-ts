@@ -164,7 +164,7 @@ def overlapping_segments(segments):
             yield left, right, X
 
 
-def propagate_upwards(ind, verbose):
+def propagate_upwards(ind, verbose, processed):
     # NOTE: using heapq here and defining __lt__
     # such that individual is sorted by time (present to past)
     # greatly cuts the workload here ON TOP OF what is
@@ -173,9 +173,16 @@ def propagate_upwards(ind, verbose):
     # This isn't working.
     # print("PROPAGATE", ind)
     stack = [ind]
+    repeats = 0
     while len(stack) > 0:
         # ind = stack.pop()
         ind = heapq.heappop(stack)
+
+        if ind in processed:
+            repeats += 1
+        else:
+            processed.add(ind)
+
         if verbose is True:
             print("VISIT")
         # print("\t", ind)
@@ -201,6 +208,7 @@ def propagate_upwards(ind, verbose):
                     assert parent.time < ind.time
                     # stack.append(parent)
                     heapq.heappush(stack, parent)
+    return repeats
 
 
 def record_inheritance(left, right, parent, child):
@@ -582,18 +590,34 @@ class Simulator(object):
 
         # First propagate the loss of the ancestral material from the newly dead
         # print("pdead")
+
+        # NOTE: this step is where our performance issue is hiding.
+        # As "genome length" increases, individual ancestry gets "gappy"
+        # (non-contiguous). This gappy ancestry results in is processing
+        # the same parent over and over again such that the ratio of
+        # repeated processing per replacement goes up ~ linearly with
+        # the -L argument to this script and is a very good predictor
+        # of changes in run time.
+        processed = set()
+        nrepeats_per_death = 0
         for j, ind in replacements:
             dead = self.population[j]
             dead.is_alive = False
             dead.remove_sample_mapping(sequence_length=self.sequence_length)
             if verbose is True:
                 print(f"propagating death {dead}")
-            propagate_upwards(dead, verbose)
+            nrepeats_per_death += propagate_upwards(dead, verbose, processed)
             self.population[j] = ind
+        processed = set()
+        nrepeats_per_birth = 0
         for _, ind in replacements:
             if verbose is True:
                 print(f"propagating birth {ind}")
-            propagate_upwards(ind, verbose)
+            nrepeats_per_birth += propagate_upwards(ind, verbose, processed)
+        # print(
+        #     nrepeats_per_death / len(replacements),
+        #     nrepeats_per_birth / len(replacements),
+        # )
         self.check_state()
 
     def check_state(self):
