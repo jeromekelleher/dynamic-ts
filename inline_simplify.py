@@ -168,7 +168,7 @@ def propagate_upwards_from(individuals, verbose):
     heapq.heapify(individuals)
     last_time = None
     processed = []
-        
+
     print("STARTING PROPAGATION")
 
     while len(individuals) > 0:
@@ -179,8 +179,12 @@ def propagate_upwards_from(individuals, verbose):
         else:
             last_time = ind.time
         assert ind not in processed
-        processed.append(ind)
         print(f"updating {ind}")
+        print("BEFORE:")
+        ind.print_state()
+        processed.append(ind)
+        print("AFTER:")
+        ind.print_state()
 
         changed = ind.update_ancestry(verbose)
         if changed or ind.is_alive:
@@ -719,7 +723,14 @@ class Simulator(object):
                             )
             for child, segments in ind.children.items():
                 if child is not ind:
-                    assert child in reachable, f"{child} {ind} {ind.children}"
+                    if child not in reachable:
+                        print("BAD BAD BAD")
+                        child.print_state()
+                    assert ind in child.parents
+                    sys.stdout.flush()
+                    assert (
+                        child in reachable
+                    ), f"{child} {child.parents} <-> {ind} {ind.children}"
                 assert_non_overlapping(segments)
                 # NOTE: this happens b/c as a side-effect of defaultdict
                 if child is not ind:
