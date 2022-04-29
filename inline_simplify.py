@@ -164,6 +164,44 @@ def overlapping_segments(segments):
             yield left, right, X
 
 
+def propagate_upwards_from(individuals, verbose):
+    heapq.heapify(individuals)
+    last_time = None
+    processed = []
+        
+    print("STARTING PROPAGATION")
+
+    while len(individuals) > 0:
+        ind = heapq.heappop(individuals)
+        if last_time is not None:
+            assert ind.time <= last_time
+            last_time = ind.time
+        else:
+            last_time = ind.time
+        assert ind not in processed
+        processed.append(ind)
+        print(f"updating {ind}")
+
+        changed = ind.update_ancestry(verbose)
+        if changed or ind.is_alive:
+            for parent in ind.parents:
+                print(f"parent = {parent}")
+                # NOTE: naively adding all parents to
+                # the stack results in double-processing some
+                # parents b/c we often process > 1 child node
+                # before getting to the parent, causing a big
+                # performance loss.
+                if parent not in individuals:
+                    assert parent.time < ind.time
+                    # stack.append(parent)
+                    heapq.heappush(individuals, parent)
+                    print(f"adding parent = {parent}")
+                else:
+                    print(f"not adding parent = {parent}")
+    print(processed)
+    print("ENDING PROPAGATION")
+
+
 def propagate_upwards(ind, verbose, processed):
     # NOTE: using heapq here and defining __lt__
     # such that individual is sorted by time (present to past)
@@ -599,7 +637,7 @@ class Simulator(object):
         # the -L argument to this script and is a very good predictor
         # of changes in run time.
         processed = set()
-        nrepeats_per_death = 0
+        # nrepeats_per_death = 0
         deadmen = []
         for j, ind in replacements:
             dead = self.population[j]
@@ -608,31 +646,32 @@ class Simulator(object):
             deadmen.append(dead)
             if verbose is True:
                 print(f"propagating death {dead}")
-            nrepeats_per_death += propagate_upwards(dead, verbose, processed)
+            # nrepeats_per_death += propagate_upwards(dead, verbose, processed)
             self.population[j] = ind
+        propagate_upwards_from(deadmen, verbose)
         # print("A = ", deadmen)
-        deadmen = sorted(deadmen, key=lambda x: x.time)
+        # deadmen = sorted(deadmen, key=lambda x: x.time)
         # print("B = ", deadmen)
-        dead_parents = []
-        dcopy = [i for i in deadmen]
-        while len(dcopy) > 0:
-            i = dcopy.pop()
-            for p in i.parents:
-                if p not in dead_parents and p not in dcopy:
-                    # print(i, "->", p)
-                    dead_parents.append(p)
+        # dead_parents = []
+        # dcopy = [i for i in deadmen]
+        # while len(dcopy) > 0:
+        #     i = dcopy.pop()
+        #     for p in i.parents:
+        #         if p not in dead_parents and p not in dcopy:
+        #             # print(i, "->", p)
+        #             dead_parents.append(p)
         # print("C = ", dead_parents)
-        for p in deadmen:
-            assert p not in dead_parents
-        dcopy = sorted([i for i in dead_parents], key=lambda x: x.time)
-        dead_grandparents = []
-        while len(dcopy) > 0:
-            i = dcopy.pop()
-            for p in i.parents:
-                if p not in dead_grandparents and p not in dcopy:
-                    dead_grandparents.append(p)
-        for i in dead_grandparents:
-            assert i not in dead_parents
+        # for p in deadmen:
+        #     assert p not in dead_parents
+        # dcopy = sorted([i for i in dead_parents], key=lambda x: x.time)
+        # dead_grandparents = []
+        # while len(dcopy) > 0:
+        #     i = dcopy.pop()
+        #     for p in i.parents:
+        #         if p not in dead_grandparents and p not in dcopy:
+        #             dead_grandparents.append(p)
+        # for i in dead_grandparents:
+        #     assert i not in dead_parents
 
         processed = set()
         nrepeats_per_birth = 0
