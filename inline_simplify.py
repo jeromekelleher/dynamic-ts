@@ -600,14 +600,40 @@ class Simulator(object):
         # of changes in run time.
         processed = set()
         nrepeats_per_death = 0
+        deadmen = []
         for j, ind in replacements:
             dead = self.population[j]
             dead.is_alive = False
             dead.remove_sample_mapping(sequence_length=self.sequence_length)
+            deadmen.append(dead)
             if verbose is True:
                 print(f"propagating death {dead}")
             nrepeats_per_death += propagate_upwards(dead, verbose, processed)
             self.population[j] = ind
+        # print("A = ", deadmen)
+        deadmen = sorted(deadmen, key=lambda x: x.time)
+        # print("B = ", deadmen)
+        dead_parents = []
+        dcopy = [i for i in deadmen]
+        while len(dcopy) > 0:
+            i = dcopy.pop()
+            for p in i.parents:
+                if p not in dead_parents and p not in dcopy:
+                    # print(i, "->", p)
+                    dead_parents.append(p)
+        # print("C = ", dead_parents)
+        for p in deadmen:
+            assert p not in dead_parents
+        dcopy = sorted([i for i in dead_parents], key=lambda x: x.time)
+        dead_grandparents = []
+        while len(dcopy) > 0:
+            i = dcopy.pop()
+            for p in i.parents:
+                if p not in dead_grandparents and p not in dcopy:
+                    dead_grandparents.append(p)
+        for i in dead_grandparents:
+            assert i not in dead_parents
+
         processed = set()
         nrepeats_per_birth = 0
         for _, ind in replacements:
