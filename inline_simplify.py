@@ -512,6 +512,7 @@ class Individual(object):
         assert_non_overlapping(self.ancestry)
 
         for c in self.children.keys():
+            print(f"adding {self} to parents of {c}")
             c.parents.add(self)
 
         for a in self.ancestry:
@@ -679,10 +680,13 @@ class Simulator(object):
 
         processed = set()
         nrepeats_per_birth = 0
+        births = []
         for _, ind in replacements:
             if verbose is True:
                 print(f"propagating birth {ind}")
-            nrepeats_per_birth += propagate_upwards(ind, verbose, processed)
+            births.append(ind)
+            # nrepeats_per_birth += propagate_upwards(ind, verbose, processed)
+        propagate_upwards_from(births, verbose)
         # print(
         #     nrepeats_per_death / len(replacements),
         #     nrepeats_per_birth / len(replacements),
