@@ -467,6 +467,7 @@ class Individual(object):
         # FIXME: overlapping generations tend to fail asserts when run for short periods of  time,
         #        but the same seeds do "just fine" in longer simulation lengths.
         S = self.intersecting_ancestry()
+        print(self.index, S)
 
         if verbose is True:
             print(f"START {self.index}")
