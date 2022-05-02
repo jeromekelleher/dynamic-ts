@@ -177,7 +177,6 @@ def propagate_upwards(ind, verbose, processed):
     while len(stack) > 0:
         # ind = stack.pop()
         ind = heapq.heappop(stack)
-        print(ind)
 
         if ind in processed:
             repeats += 1
@@ -195,13 +194,7 @@ def propagate_upwards(ind, verbose, processed):
         # print("before")
         # ind.print_state()
         # print(f"updating {ind}")
-        print(f"before {ind.ancestry}")
-        if ind.index == 31:
-            ind.print_state()
         changed = ind.update_ancestry(verbose)
-        print(f"after {ind.ancestry}")
-        if ind.index == 31:
-            ind.print_state()
         # print("after")
         # ind.print_state()
         if changed or ind.is_alive:
@@ -609,7 +602,6 @@ class Simulator(object):
         processed = set()
         nrepeats_per_death = 0
         deadmen = []
-        print("DEATHS")
         for j, ind in replacements:
             dead = self.population[j]
             dead.is_alive = False
@@ -620,32 +612,31 @@ class Simulator(object):
             nrepeats_per_death += propagate_upwards(dead, verbose, processed)
             self.population[j] = ind
         # print("A = ", deadmen)
-        deadmen = sorted(deadmen, key=lambda x: x.time)
-        # print("B = ", deadmen)
-        dead_parents = []
-        dcopy = [i for i in deadmen]
-        while len(dcopy) > 0:
-            i = dcopy.pop()
-            for p in i.parents:
-                if p not in dead_parents and p not in dcopy:
-                    # print(i, "->", p)
-                    dead_parents.append(p)
-        # print("C = ", dead_parents)
-        for p in deadmen:
-            assert p not in dead_parents
-        dcopy = sorted([i for i in dead_parents], key=lambda x: x.time)
-        dead_grandparents = []
-        while len(dcopy) > 0:
-            i = dcopy.pop()
-            for p in i.parents:
-                if p not in dead_grandparents and p not in dcopy:
-                    dead_grandparents.append(p)
-        for i in dead_grandparents:
-            assert i not in dead_parents
+        # deadmen = sorted(deadmen, key=lambda x: x.time)
+        # # print("B = ", deadmen)
+        # dead_parents = []
+        # dcopy = [i for i in deadmen]
+        # while len(dcopy) > 0:
+        #     i = dcopy.pop()
+        #     for p in i.parents:
+        #         if p not in dead_parents and p not in dcopy:
+        #             # print(i, "->", p)
+        #             dead_parents.append(p)
+        # # print("C = ", dead_parents)
+        # for p in deadmen:
+        #     assert p not in dead_parents
+        # dcopy = sorted([i for i in dead_parents], key=lambda x: x.time)
+        # dead_grandparents = []
+        # while len(dcopy) > 0:
+        #     i = dcopy.pop()
+        #     for p in i.parents:
+        #         if p not in dead_grandparents and p not in dcopy:
+        #             dead_grandparents.append(p)
+        # for i in dead_grandparents:
+        #     assert i not in dead_parents
 
         processed = set()
         nrepeats_per_birth = 0
-        print("BIRTHS")
         for _, ind in replacements:
             if verbose is True:
                 print(f"propagating birth {ind}")
@@ -866,7 +857,7 @@ def main():
     # sim.run(1)
     sim.run(args.simlen, args.verbose)
     ts = sim.export()
-    print(ts.draw_text())
+    # print(ts.draw_text())
 
     topologies = make_topologies(ts)
 
@@ -883,7 +874,7 @@ def main():
     for i, j in enumerate(idmap):
         if j != tskit.NULL:
             node_labels[j] = node_map[i]
-    print(ts_tsk.draw_text(node_labels={i: str(j) for i, j in node_labels.items()}))
+    # print(ts_tsk.draw_text(node_labels={i: str(j) for i, j in node_labels.items()}))
 
     tsk_topologies = make_topologies(ts_tsk, node_labels)
 

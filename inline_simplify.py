@@ -170,14 +170,14 @@ def propagate_upwards_from(individuals, verbose, sequence_length):
     last_time = None
     processed = set()
 
-    print("STARTING PROPAGATION")
+    # print("STARTING PROPAGATION")
 
     while len(individuals) > 0:
         assert len(individuals) == len(current_ind)
         # print(f"XX = {individuals}")
         ind = heapq.heappop(individuals)
         current_ind.remove(ind.individual)
-        print(f"{ind}")
+        # print(f"{ind}")
         if last_time is not None:
             assert (
                 ind.individual.time <= last_time
@@ -201,27 +201,27 @@ def propagate_upwards_from(individuals, verbose, sequence_length):
         # That commant drops a single bit of
         # ancestry out, giving the wrong topo
         # at the end
-        if ind.individual.index == 31:
-            print("BEFORE")
-            ind.individual.print_state()
-            # print("The children:")
-            # for c in ind.individual.children:
-            #     c.print_state()
+        # if ind.individual.index == 31:
+        #     # print("BEFORE")
+        #     ind.individual.print_state()
+        # print("The children:")
+        # for c in ind.individual.children:
+        #     c.print_state()
 
-        print(f"before: {ind.individual.ancestry}")
+        # print(f"before: {ind.individual.ancestry}")
         changed = ind.individual.update_ancestry(verbose)
-        print("after", ind.individual.ancestry)
+        # print("after", ind.individual.ancestry)
         # NOTE:
         # the commmand -s 5 -d 1 seem useful.
         # That commant drops a single bit of
         # ancestry out, giving the wrong topo
         # at the end
-        if ind.individual.index == 31:
-            print("AFTER")
-            ind.individual.print_state()
-            # print("The children:")
-            # for c in ind.individual.children:
-            #     c.print_state()
+        # if ind.individual.index == 31:
+        #     print("AFTER")
+        #     ind.individual.print_state()
+        # print("The children:")
+        # for c in ind.individual.children:
+        #     c.print_state()
         # print("AFTER:")
         # ind.individual.print_state()
         if changed or ind.individual.is_alive:
@@ -244,8 +244,6 @@ def propagate_upwards_from(individuals, verbose, sequence_length):
                     # print(f"XX adding parent = {parent}")
                 # else:
                 #     print(f"not adding parent = {parent}")
-    # print(processed)
-    print("ENDING PROPAGATION")
 
 
 def propagate_upwards(ind, verbose, processed):
@@ -712,7 +710,6 @@ class Simulator(object):
                 print(f"propagating death {dead}")
             # nrepeats_per_death += propagate_upwards(dead, verbose, processed)
             self.population[j] = ind
-        print("propagating DEATH")
         propagate_upwards_from(deadmen, verbose, self.sequence_length)
         # print("A = ", deadmen)
         # deadmen = sorted(deadmen, key=lambda x: x.time)
@@ -747,7 +744,6 @@ class Simulator(object):
             births.append(IndividualToProcess(ind, False, True))
             # nrepeats_per_birth += propagate_upwards(ind, verbose, processed)
 
-        print("propagating BIRTH")
         propagate_upwards_from(births, verbose, self.sequence_length)
         # print(
         #     nrepeats_per_death / len(replacements),
@@ -972,7 +968,7 @@ def main():
     # sim.run(1)
     sim.run(args.simlen, args.verbose)
     ts = sim.export()
-    print(ts.draw_text())
+    # print(ts.draw_text())
 
     topologies = make_topologies(ts)
 
@@ -989,7 +985,7 @@ def main():
     for i, j in enumerate(idmap):
         if j != tskit.NULL:
             node_labels[j] = node_map[i]
-    print(ts_tsk.draw_text(node_labels={i: str(j) for i, j in node_labels.items()}))
+    # print(ts_tsk.draw_text(node_labels={i: str(j) for i, j in node_labels.items()}))
 
     tsk_topologies = make_topologies(ts_tsk, node_labels)
 
