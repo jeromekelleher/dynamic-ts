@@ -167,7 +167,7 @@ def overlapping_segments(segments):
 def propagate_upwards_from(individuals, verbose, sequence_length):
     heapq.heapify(individuals)
     last_time = None
-    processed = []
+    processed = set()
 
     print("STARTING PROPAGATION")
 
@@ -186,7 +186,7 @@ def propagate_upwards_from(individuals, verbose, sequence_length):
         # print(f"updating {ind.individual}")
         # print("BEFORE:")
         # ind.individual.print_state()
-        processed.append(ind.individual)
+        processed.add(ind.individual)
 
         if ind.tokill:
             # print("TOKILL")
