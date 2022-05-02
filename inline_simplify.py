@@ -166,15 +166,18 @@ def overlapping_segments(segments):
 
 def propagate_upwards_from(individuals, verbose, sequence_length):
     heapq.heapify(individuals)
+    current_ind = set([i.individual for i in individuals])
     last_time = None
     processed = set()
 
     print("STARTING PROPAGATION")
 
     while len(individuals) > 0:
-        print(f"XX = {individuals}")
+        assert len(individuals) == len(current_ind)
+        # print(f"XX = {individuals}")
         ind = heapq.heappop(individuals)
-        print(f"XX ind = {ind}")
+        current_ind.remove(ind.individual)
+        print(f"XX ind = {ind}, {ind.individual.parents}")
         if last_time is not None:
             assert (
                 ind.individual.time <= last_time
@@ -193,7 +196,31 @@ def propagate_upwards_from(individuals, verbose, sequence_length):
             ind.individual.is_alive = False
             ind.individual.remove_sample_mapping(sequence_length=sequence_length)
 
+        # NOTE:
+        # the commmand -s 5 -d 1 seem useful.
+        # That commant drops a single bit of
+        # ancestry out, giving the wrong topo
+        # at the end
+        if ind.individual.index == 17:
+            print("BEFORE")
+            ind.individual.print_state()
+            print("The children:")
+            for c in ind.individual.children:
+                c.print_state()
+
         changed = ind.individual.update_ancestry(verbose)
+        print(changed, ind.individual.ancestry)
+        # NOTE:
+        # the commmand -s 5 -d 1 seem useful.
+        # That commant drops a single bit of
+        # ancestry out, giving the wrong topo
+        # at the end
+        if ind.individual.index == 17:
+            print("AFTER")
+            ind.individual.print_state()
+            print("The children:")
+            for c in ind.individual.children:
+                c.print_state()
         # print("AFTER:")
         # ind.individual.print_state()
         if changed or ind.individual.is_alive:
@@ -204,21 +231,24 @@ def propagate_upwards_from(individuals, verbose, sequence_length):
                 # parents b/c we often process > 1 child node
                 # before getting to the parent, causing a big
                 # performance loss.
-                if parent not in individuals:
+                if parent not in current_ind:
                     assert parent.time < ind.individual.time
                     if last_time is not None:
                         assert parent.time < last_time, f"{parent.time}, {last_time}"
                     # stack.append(parent)
-                    heapq.heappush(individuals, IndividualToProcess(parent, False))
+                    heapq.heappush(
+                        individuals, IndividualToProcess(parent, False, False)
+                    )
+                    current_ind.add(parent)
                     # print(f"XX adding parent = {parent}")
                 # else:
-                # print(f"not adding parent = {parent}")
+                #     print(f"not adding parent = {parent}")
     # print(processed)
     print("ENDING PROPAGATION")
 
 
 def propagate_upwards(ind, verbose, processed):
-    # NOTE: using heapq here and defining __lt__
+    # NOTE: using heapq here and defining _lt__
     # such that individual is sorted by time (present to past)
     # greatly cuts the workload here ON TOP OF what is
     # accomplished by not double-entering nodes into the stack
@@ -552,15 +582,19 @@ class Individual(object):
 
 
 class IndividualToProcess(object):
-    def __init__(self, individual: Individual, tokill: bool):
+    def __init__(self, individual: Individual, tokill: bool, isbirth: bool):
         self.individual = individual
         self.tokill = tokill
+        self.isbirth = isbirth
 
     def __lt__(self, other):
         return self.individual.__lt__(other.individual)
+        # if self.tokill == other.tokill:
+        #     return self.individual.__lt__(other.individual)
+        # return self.tokill > other.tokill
 
     def __repr__(self):
-        return f"({self.individual}, {self.tokill})"
+        return f"({self.individual}, tokill={self.tokill}, isbirth={self.isbirth})"
 
 
 @dataclass
@@ -671,11 +705,12 @@ class Simulator(object):
             dead = self.population[j]
             # dead.is_alive = False
             # dead.remove_sample_mapping(sequence_length=self.sequence_length)
-            deadmen.append(IndividualToProcess(dead, True))
+            deadmen.append(IndividualToProcess(dead, True, False))
             if verbose is True:
                 print(f"propagating death {dead}")
             # nrepeats_per_death += propagate_upwards(dead, verbose, processed)
             self.population[j] = ind
+        print("propagating DEATH")
         propagate_upwards_from(deadmen, verbose, self.sequence_length)
         # print("A = ", deadmen)
         # deadmen = sorted(deadmen, key=lambda x: x.time)
@@ -707,8 +742,10 @@ class Simulator(object):
         for _, ind in replacements:
             if verbose is True:
                 print(f"propagating birth {ind}")
-            births.append(IndividualToProcess(ind, False))
+            births.append(IndividualToProcess(ind, False, True))
             # nrepeats_per_birth += propagate_upwards(ind, verbose, processed)
+
+        print("propagating BIRTH")
         propagate_upwards_from(births, verbose, self.sequence_length)
         # print(
         #     nrepeats_per_death / len(replacements),
@@ -933,7 +970,7 @@ def main():
     # sim.run(1)
     sim.run(args.simlen, args.verbose)
     ts = sim.export()
-    # print(ts.draw_text())
+    print(ts.draw_text())
 
     topologies = make_topologies(ts)
 
@@ -950,7 +987,7 @@ def main():
     for i, j in enumerate(idmap):
         if j != tskit.NULL:
             node_labels[j] = node_map[i]
-    # print(ts_tsk.draw_text(node_labels={i: str(j) for i, j in node_labels.items()}))
+    print(ts_tsk.draw_text(node_labels={i: str(j) for i, j in node_labels.items()}))
 
     tsk_topologies = make_topologies(ts_tsk, node_labels)
 
