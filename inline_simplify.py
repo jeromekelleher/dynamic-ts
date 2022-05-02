@@ -174,6 +174,7 @@ def propagate_upwards_from(individuals, verbose, sequence_length):
     while len(individuals) > 0:
         print(f"XX = {individuals}")
         ind = heapq.heappop(individuals)
+        print(f"XX ind = {ind}")
         if last_time is not None:
             assert (
                 ind.individual.time <= last_time
@@ -181,23 +182,23 @@ def propagate_upwards_from(individuals, verbose, sequence_length):
             last_time = ind.individual.time
         else:
             last_time = ind.individual.time
-        # assert ind.individual not in processed, f"{ind.individual}"
-        print(f"updating {ind.individual}")
-        print("BEFORE:")
-        ind.individual.print_state()
+        assert ind.individual not in processed, f"{ind.individual}"
+        # print(f"updating {ind.individual}")
+        # print("BEFORE:")
+        # ind.individual.print_state()
         processed.append(ind.individual)
 
         if ind.tokill:
-            print("TOKILL")
+            # print("TOKILL")
             ind.individual.is_alive = False
             ind.individual.remove_sample_mapping(sequence_length=sequence_length)
 
         changed = ind.individual.update_ancestry(verbose)
-        print("AFTER:")
-        ind.individual.print_state()
+        # print("AFTER:")
+        # ind.individual.print_state()
         if changed or ind.individual.is_alive:
             for parent in ind.individual.parents:
-                print(f"parent = {parent}")
+                # print(f"parent = {parent}")
                 # NOTE: naively adding all parents to
                 # the stack results in double-processing some
                 # parents b/c we often process > 1 child node
@@ -209,10 +210,10 @@ def propagate_upwards_from(individuals, verbose, sequence_length):
                         assert parent.time < last_time, f"{parent.time}, {last_time}"
                     # stack.append(parent)
                     heapq.heappush(individuals, IndividualToProcess(parent, False))
-                    print(f"XX adding parent = {parent}")
-                else:
-                    print(f"not adding parent = {parent}")
-    print(processed)
+                    # print(f"XX adding parent = {parent}")
+                # else:
+                # print(f"not adding parent = {parent}")
+    # print(processed)
     print("ENDING PROPAGATION")
 
 
@@ -522,7 +523,7 @@ class Individual(object):
         assert_non_overlapping(self.ancestry)
 
         for c in self.children.keys():
-            print(f"adding {self} to parents of {c}")
+            # print(f"adding {self} to parents of {c}")
             c.parents.add(self)
 
         for a in self.ancestry:
