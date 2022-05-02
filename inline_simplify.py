@@ -164,7 +164,7 @@ def overlapping_segments(segments):
             yield left, right, X
 
 
-def propagate_upwards_from(individuals, verbose):
+def propagate_upwards_from(individuals, verbose, sequence_length):
     heapq.heapify(individuals)
     last_time = None
     processed = []
@@ -172,23 +172,31 @@ def propagate_upwards_from(individuals, verbose):
     print("STARTING PROPAGATION")
 
     while len(individuals) > 0:
+        print(f"XX = {individuals}")
         ind = heapq.heappop(individuals)
         if last_time is not None:
-            assert ind.time <= last_time
-            last_time = ind.time
+            assert (
+                ind.individual.time <= last_time
+            ), f"{ind.individual.time} {last_time}"
+            last_time = ind.individual.time
         else:
-            last_time = ind.time
-        assert ind not in processed
-        print(f"updating {ind}")
+            last_time = ind.individual.time
+        # assert ind.individual not in processed, f"{ind.individual}"
+        print(f"updating {ind.individual}")
         print("BEFORE:")
-        ind.print_state()
-        processed.append(ind)
-        print("AFTER:")
-        ind.print_state()
+        ind.individual.print_state()
+        processed.append(ind.individual)
 
-        changed = ind.update_ancestry(verbose)
-        if changed or ind.is_alive:
-            for parent in ind.parents:
+        if ind.tokill:
+            print("TOKILL")
+            ind.individual.is_alive = False
+            ind.individual.remove_sample_mapping(sequence_length=sequence_length)
+
+        changed = ind.individual.update_ancestry(verbose)
+        print("AFTER:")
+        ind.individual.print_state()
+        if changed or ind.individual.is_alive:
+            for parent in ind.individual.parents:
                 print(f"parent = {parent}")
                 # NOTE: naively adding all parents to
                 # the stack results in double-processing some
@@ -196,10 +204,12 @@ def propagate_upwards_from(individuals, verbose):
                 # before getting to the parent, causing a big
                 # performance loss.
                 if parent not in individuals:
-                    assert parent.time < ind.time
+                    assert parent.time < ind.individual.time
+                    if last_time is not None:
+                        assert parent.time < last_time, f"{parent.time}, {last_time}"
                     # stack.append(parent)
-                    heapq.heappush(individuals, parent)
-                    print(f"adding parent = {parent}")
+                    heapq.heappush(individuals, IndividualToProcess(parent, False))
+                    print(f"XX adding parent = {parent}")
                 else:
                     print(f"not adding parent = {parent}")
     print(processed)
@@ -540,6 +550,18 @@ class Individual(object):
         return rv
 
 
+class IndividualToProcess(object):
+    def __init__(self, individual: Individual, tokill: bool):
+        self.individual = individual
+        self.tokill = tokill
+
+    def __lt__(self, other):
+        return self.individual.__lt__(other.individual)
+
+    def __repr__(self):
+        return f"({self.individual}, {self.tokill})"
+
+
 @dataclass
 class TransmissionInfo:
     """
@@ -646,14 +668,14 @@ class Simulator(object):
         deadmen = []
         for j, ind in replacements:
             dead = self.population[j]
-            dead.is_alive = False
-            dead.remove_sample_mapping(sequence_length=self.sequence_length)
-            deadmen.append(dead)
+            # dead.is_alive = False
+            # dead.remove_sample_mapping(sequence_length=self.sequence_length)
+            deadmen.append(IndividualToProcess(dead, True))
             if verbose is True:
                 print(f"propagating death {dead}")
             # nrepeats_per_death += propagate_upwards(dead, verbose, processed)
             self.population[j] = ind
-        propagate_upwards_from(deadmen, verbose)
+        propagate_upwards_from(deadmen, verbose, self.sequence_length)
         # print("A = ", deadmen)
         # deadmen = sorted(deadmen, key=lambda x: x.time)
         # print("B = ", deadmen)
@@ -684,9 +706,9 @@ class Simulator(object):
         for _, ind in replacements:
             if verbose is True:
                 print(f"propagating birth {ind}")
-            births.append(ind)
+            births.append(IndividualToProcess(ind, False))
             # nrepeats_per_birth += propagate_upwards(ind, verbose, processed)
-        propagate_upwards_from(births, verbose)
+        propagate_upwards_from(births, verbose, self.sequence_length)
         # print(
         #     nrepeats_per_death / len(replacements),
         #     nrepeats_per_birth / len(replacements),
