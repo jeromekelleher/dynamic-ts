@@ -177,6 +177,7 @@ def propagate_upwards(ind, verbose, processed):
     while len(stack) > 0:
         # ind = stack.pop()
         ind = heapq.heappop(stack)
+        print(ind)
 
         if ind in processed:
             repeats += 1
@@ -602,6 +603,7 @@ class Simulator(object):
         processed = set()
         nrepeats_per_death = 0
         deadmen = []
+        print("DEATHS")
         for j, ind in replacements:
             dead = self.population[j]
             dead.is_alive = False
@@ -637,6 +639,7 @@ class Simulator(object):
 
         processed = set()
         nrepeats_per_birth = 0
+        print("BIRTHS")
         for _, ind in replacements:
             if verbose is True:
                 print(f"propagating birth {ind}")
@@ -857,7 +860,7 @@ def main():
     # sim.run(1)
     sim.run(args.simlen, args.verbose)
     ts = sim.export()
-    # print(ts.draw_text())
+    print(ts.draw_text())
 
     topologies = make_topologies(ts)
 
@@ -874,7 +877,7 @@ def main():
     for i, j in enumerate(idmap):
         if j != tskit.NULL:
             node_labels[j] = node_map[i]
-    # print(ts_tsk.draw_text(node_labels={i: str(j) for i, j in node_labels.items()}))
+    print(ts_tsk.draw_text(node_labels={i: str(j) for i, j in node_labels.items()}))
 
     tsk_topologies = make_topologies(ts_tsk, node_labels)
 
