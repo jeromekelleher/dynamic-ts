@@ -177,7 +177,7 @@ def propagate_upwards_from(individuals, verbose, sequence_length):
         # print(f"XX = {individuals}")
         ind = heapq.heappop(individuals)
         current_ind.remove(ind.individual)
-        print(f"XX ind = {ind}, {ind.individual.parents}")
+        print(f"{ind}")
         if last_time is not None:
             assert (
                 ind.individual.time <= last_time
@@ -201,26 +201,27 @@ def propagate_upwards_from(individuals, verbose, sequence_length):
         # That commant drops a single bit of
         # ancestry out, giving the wrong topo
         # at the end
-        if ind.individual.index == 17:
+        if ind.individual.index == 31:
             print("BEFORE")
             ind.individual.print_state()
-            print("The children:")
-            for c in ind.individual.children:
-                c.print_state()
+            # print("The children:")
+            # for c in ind.individual.children:
+            #     c.print_state()
 
+        print(f"before: {ind.individual.ancestry}")
         changed = ind.individual.update_ancestry(verbose)
-        print(changed, ind.individual.ancestry)
+        print("after", ind.individual.ancestry)
         # NOTE:
         # the commmand -s 5 -d 1 seem useful.
         # That commant drops a single bit of
         # ancestry out, giving the wrong topo
         # at the end
-        if ind.individual.index == 17:
+        if ind.individual.index == 31:
             print("AFTER")
             ind.individual.print_state()
-            print("The children:")
-            for c in ind.individual.children:
-                c.print_state()
+            # print("The children:")
+            # for c in ind.individual.children:
+            #     c.print_state()
         # print("AFTER:")
         # ind.individual.print_state()
         if changed or ind.individual.is_alive:
@@ -467,7 +468,7 @@ class Individual(object):
         # FIXME: overlapping generations tend to fail asserts when run for short periods of  time,
         #        but the same seeds do "just fine" in longer simulation lengths.
         S = self.intersecting_ancestry()
-        print(self.index, S)
+        # print(self.index, S)
 
         if verbose is True:
             print(f"START {self.index}")
@@ -491,7 +492,7 @@ class Individual(object):
             if verbose is True:
                 print("ANCESTRY info = ", left, right, X)
             if len(X) == 1:
-                mapped_ind = X[0].child
+                mapped_ind = X[0].mapped_node
                 if verbose is True:
                     print("unary", mapped_ind, X[0])
                 if self.is_alive:

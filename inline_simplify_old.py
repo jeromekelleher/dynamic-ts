@@ -195,7 +195,13 @@ def propagate_upwards(ind, verbose, processed):
         # print("before")
         # ind.print_state()
         # print(f"updating {ind}")
+        print(f"before {ind.ancestry}")
+        if ind.index == 31:
+            ind.print_state()
         changed = ind.update_ancestry(verbose)
+        print(f"after {ind.ancestry}")
+        if ind.index == 31:
+            ind.print_state()
         # print("after")
         # ind.print_state()
         if changed or ind.is_alive:
