@@ -4,6 +4,7 @@ structures directly.
 """
 import argparse
 from dataclasses import dataclass
+from enum import IntEnum
 import random
 import collections
 import heapq
@@ -171,11 +172,13 @@ def propagate_upwards_from(individuals, verbose, sequence_length):
     processed = set()
 
     # print("STARTING PROPAGATION")
+    visits = 0
 
     while len(individuals) > 0:
         assert len(individuals) == len(current_ind)
         # print(f"XX = {individuals}")
         ind = heapq.heappop(individuals)
+        visits += 1
         current_ind.remove(ind.individual)
         # print(f"{ind}")
         if last_time is not None:
@@ -191,7 +194,7 @@ def propagate_upwards_from(individuals, verbose, sequence_length):
         # ind.individual.print_state()
         processed.add(ind.individual)
 
-        if ind.tokill:
+        if ind.type == IndividualType.DEATH:
             # print("TOKILL")
             ind.individual.is_alive = False
             ind.individual.remove_sample_mapping(sequence_length=sequence_length)
@@ -238,13 +241,13 @@ def propagate_upwards_from(individuals, verbose, sequence_length):
                         assert parent.time < last_time, f"{parent.time}, {last_time}"
                     # stack.append(parent)
                     heapq.heappush(
-                        individuals, IndividualToProcess(parent, False, False)
+                        individuals, IndividualToProcess(parent, IndividualType.PARENT)
                     )
                     current_ind.add(parent)
                     # print(f"XX adding parent = {parent}")
                 # else:
                 #     print(f"not adding parent = {parent}")
-
+    return visits
 
 def propagate_upwards(ind, verbose, processed):
     # NOTE: using heapq here and defining _lt__
@@ -581,20 +584,27 @@ class Individual(object):
         return rv
 
 
+class IndividualType(IntEnum):
+    PARENT = 0
+    BIRTH = 1
+    DEATH = 2
+
+
 class IndividualToProcess(object):
-    def __init__(self, individual: Individual, tokill: bool, isbirth: bool):
+    def __init__(self, individual: Individual, type: IndividualType):
         self.individual = individual
-        self.tokill = tokill
-        self.isbirth = isbirth
+        self.type = type
 
     def __lt__(self, other):
-        return self.individual.__lt__(other.individual)
+        return (self.individual.time, self.type) > (other.individual.time, other.type)
+        # return self.individual.__lt__(other.individual)
+
         # if self.tokill == other.tokill:
         #     return self.individual.__lt__(other.individual)
         # return self.tokill > other.tokill
 
     def __repr__(self):
-        return f"({self.individual}, tokill={self.tokill}, isbirth={self.isbirth})"
+        return f"({self.individual}, type={self.type})"
 
 
 @dataclass
@@ -700,17 +710,17 @@ class Simulator(object):
         # of changes in run time.
         processed = set()
         # nrepeats_per_death = 0
-        deadmen = []
+        to_process = []
         for j, ind in replacements:
             dead = self.population[j]
             # dead.is_alive = False
             # dead.remove_sample_mapping(sequence_length=self.sequence_length)
-            deadmen.append(IndividualToProcess(dead, True, False))
+            to_process.append(IndividualToProcess(dead, IndividualType.DEATH))
             if verbose is True:
                 print(f"propagating death {dead}")
             # nrepeats_per_death += propagate_upwards(dead, verbose, processed)
             self.population[j] = ind
-        propagate_upwards_from(deadmen, verbose, self.sequence_length)
+        # propagate_upwards_from(deadmen, verbose, self.sequence_length)
         # print("A = ", deadmen)
         # deadmen = sorted(deadmen, key=lambda x: x.time)
         # print("B = ", deadmen)
@@ -737,14 +747,15 @@ class Simulator(object):
 
         processed = set()
         nrepeats_per_birth = 0
-        births = []
+        # births = []
         for _, ind in replacements:
             if verbose is True:
                 print(f"propagating birth {ind}")
-            births.append(IndividualToProcess(ind, False, True))
+            to_process.append(IndividualToProcess(ind, IndividualType.BIRTH))
             # nrepeats_per_birth += propagate_upwards(ind, verbose, processed)
 
-        propagate_upwards_from(births, verbose, self.sequence_length)
+        visits = propagate_upwards_from(to_process, verbose, self.sequence_length)
+        print(visits)
         # print(
         #     nrepeats_per_death / len(replacements),
         #     nrepeats_per_birth / len(replacements),

@@ -174,9 +174,11 @@ def propagate_upwards(ind, verbose, processed):
     # print("PROPAGATE", ind)
     stack = [ind]
     repeats = 0
+    visits = 0
     while len(stack) > 0:
         # ind = stack.pop()
         ind = heapq.heappop(stack)
+        visits += 1
 
         if ind in processed:
             repeats += 1
@@ -208,7 +210,7 @@ def propagate_upwards(ind, verbose, processed):
                     assert parent.time < ind.time
                     # stack.append(parent)
                     heapq.heappush(stack, parent)
-    return repeats
+    return visits
 
 
 def record_inheritance(left, right, parent, child):
@@ -602,6 +604,7 @@ class Simulator(object):
         processed = set()
         nrepeats_per_death = 0
         deadmen = []
+        visits = 0
         for j, ind in replacements:
             dead = self.population[j]
             dead.is_alive = False
@@ -609,7 +612,7 @@ class Simulator(object):
             deadmen.append(dead)
             if verbose is True:
                 print(f"propagating death {dead}")
-            nrepeats_per_death += propagate_upwards(dead, verbose, processed)
+            visits += propagate_upwards(dead, verbose, processed)
             self.population[j] = ind
         # print("A = ", deadmen)
         # deadmen = sorted(deadmen, key=lambda x: x.time)
@@ -640,7 +643,8 @@ class Simulator(object):
         for _, ind in replacements:
             if verbose is True:
                 print(f"propagating birth {ind}")
-            nrepeats_per_birth += propagate_upwards(ind, verbose, processed)
+            visits += propagate_upwards(ind, verbose, processed)
+        print(visits)
         # print(
         #     nrepeats_per_death / len(replacements),
         #     nrepeats_per_birth / len(replacements),
