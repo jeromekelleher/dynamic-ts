@@ -497,26 +497,31 @@ class Individual(object):
                 if verbose is True:
                     print("unary", mapped_ind, X[0])
                 if self.is_alive:
-                    if mapped_ind.is_alive:
-                        if verbose is True:
-                            print("SEG ADDING", mapped_ind)
-                        self.update_child_segments(
-                            mapped_ind,
-                            left,
-                            right,  # input_child_details
-                        )
-                    else:
-                        if verbose is True:
-                            print(
-                                "NEED TO PROCESS UNARY THRU DEAD UNARY NODE",
-                                mapped_ind,
-                            )
-                        mapped_ind = X[0].mapped_node
-                        self.update_child_segments(
-                            mapped_ind,
-                            left,
-                            right,
-                        )
+                    self.update_child_segments(
+                        mapped_ind,
+                        left,
+                        right,  # input_child_details
+                    )
+                    # if mapped_ind.is_alive:
+                    #     if verbose is True:
+                    #         print("SEG ADDING", mapped_ind)
+                    #     self.update_child_segments(
+                    #         mapped_ind,
+                    #         left,
+                    #         right,  # input_child_details
+                    #     )
+                    # else:
+                    #     if verbose is True:
+                    #         print(
+                    #             "NEED TO PROCESS UNARY THRU DEAD UNARY NODE",
+                    #             mapped_ind,
+                    #         )
+                    #     mapped_ind = X[0].mapped_node
+                    #     self.update_child_segments(
+                    #         mapped_ind,
+                    #         left,
+                    #         right,
+                    #     )
             else:
                 mapped_ind = self
 
