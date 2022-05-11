@@ -213,7 +213,6 @@ def record_inheritance(left, right, parent, child):
     """
     child.parents.add(parent)
     parent.add_child_segment(child, left, right)
-    # print("record", child, parent, child.parents)
 
 
 class Segment(object):
@@ -373,13 +372,7 @@ class Individual(object):
         return S
 
     def update_ancestry(self, verbose):
-        # TODO: squash edges
-        # TODO: do only 1 pass through self.ancestry
-        # TODO: figure out a return value meaning "this node's ancestry changed"
-        # FIXME: overlapping generations tend to fail asserts when run for short periods of  time,
-        #        but the same seeds do "just fine" in longer simulation lengths.
         S = self.intersecting_ancestry()
-        # print(self.index, S)
 
         if verbose is True:
             print(f"START {self.index}")
@@ -410,28 +403,8 @@ class Individual(object):
                     self.update_child_segments(
                         mapped_ind,
                         left,
-                        right,  # input_child_details
+                        right,
                     )
-                    # if mapped_ind.is_alive:
-                    #     if verbose is True:
-                    #         print("SEG ADDING", mapped_ind)
-                    #     self.update_child_segments(
-                    #         mapped_ind,
-                    #         left,
-                    #         right,  # input_child_details
-                    #     )
-                    # else:
-                    #     if verbose is True:
-                    #         print(
-                    #             "NEED TO PROCESS UNARY THRU DEAD UNARY NODE",
-                    #             mapped_ind,
-                    #         )
-                    #     mapped_ind = X[0].mapped_node
-                    #     self.update_child_segments(
-                    #         mapped_ind,
-                    #         left,
-                    #         right,
-                    #     )
             else:
                 mapped_ind = self
 
@@ -439,9 +412,8 @@ class Individual(object):
                     self.update_child_segments(
                         x.mapped_node,
                         left,
-                        right,  # input_child_details
+                        right,
                     )
-                    # x.mapped_node.parents.add(self)
 
                 if mapped_ind in self.children:
                     # NOTE: this is a really annoyting gotcha:
@@ -466,35 +438,22 @@ class Individual(object):
                 ancestry_change_detected = True
                 del self.ancestry[output_ancestry_index:]
 
-            # TODO: squash output ancestry?
-
         assert_non_overlapping(self.ancestry)
 
         for c in self.children.keys():
-            # print(f"adding {self} to parents of {c}")
             c.parents.add(self)
 
         for a in self.ancestry:
             if a.child in self.children and a.child is not self:
                 assert self in a.child.parents, f"{self} {a} {self.ancestry}"
         if verbose is True:
-            print("DONE")
             self.print_state()
-
-        if verbose is True:
-            if ancestry_change_detected:
-                print("ANCESTRY HAS CHANGED")
-            else:
-                print("ANCESTRY HAS NOT CHANGED")
-            print("OUT")
+            print("DONE")
 
         assert self not in self.parents
         # Something CLOSE TO, but not EXACTLY, like the
         # next line gets on on the path to not visiting
-        # the entire graph.  If we visit parents
-        # if this is true or ind.is_alive, we'll get
-        # the same trees out for small sims but then get
-        # assertions on larger sims.
+        # the entire graph.
         rv = ancestry_change_detected or len(self.ancestry) == 0
         return rv
 
@@ -512,11 +471,6 @@ class IndividualToProcess(object):
 
     def __lt__(self, other):
         return (self.individual.time, self.type) > (other.individual.time, other.type)
-        # return self.individual.__lt__(other.individual)
-
-        # if self.tokill == other.tokill:
-        #     return self.individual.__lt__(other.individual)
-        # return self.tokill > other.tokill
 
     def __repr__(self):
         return f"({self.individual}, type={self.type})"
@@ -548,7 +502,6 @@ class Simulator(object):
         self.population = [Individual(self.time, i) for i in range(population_size)]
         self.next_individual_index = population_size
         self.transmissions: List[TransmissionInfo] = []
-        # self.leftover_alive = []
 
         # Everyone starts out alive, so has to map to self
         # (Overlapping generations fails fast if this isn't done)
@@ -567,28 +520,8 @@ class Simulator(object):
             if self.rng.random() < self.death_proba:
                 left_parent = self.rng.choice(self.population)
                 right_parent = self.rng.choice(self.population)
-                # left_parent_index = -1
-                # for k in range(self.population_size):
-                #     if left_parent is self.population[k]:
-                #         left_parent_index = k
-                #         break
-                # right_parent_index = -1
-                # for k in range(self.population_size):
-                #     if right_parent is self.population[k]:
-                #         right_parent_index = k
-                #         break
-                # Using integers here just to make debugging easier
                 x = self.rng.randint(1, self.sequence_length - 1)
                 assert 0 < x < self.sequence_length
-                # print(
-                #     "BIRTH:",
-                #     left_parent,
-                #     left_parent_index,
-                #     right_parent,
-                #     right_parent_index,
-                #     j,
-                #     x,
-                # )
                 child = Individual(self.time, self.next_individual_index)
                 self.next_individual_index += 1
                 child.ancestry = [Segment(0, self.sequence_length, child)]
@@ -613,68 +546,19 @@ class Simulator(object):
                     )
                 )
 
-        # First propagate the loss of the ancestral material from the newly dead
-        # print("pdead")
-
-        # NOTE: this step is where our performance issue is hiding.
-        # As "genome length" increases, individual ancestry gets "gappy"
-        # (non-contiguous). This gappy ancestry results in is processing
-        # the same parent over and over again such that the ratio of
-        # repeated processing per replacement goes up ~ linearly with
-        # the -L argument to this script and is a very good predictor
-        # of changes in run time.
         processed = set()
-        # nrepeats_per_death = 0
         to_process = []
         for j, ind in replacements:
             dead = self.population[j]
-            # dead.is_alive = False
-            # dead.remove_sample_mapping(sequence_length=self.sequence_length)
             to_process.append(IndividualToProcess(dead, IndividualType.DEATH))
-            if verbose is True:
-                print(f"propagating death {dead}")
-            # nrepeats_per_death += propagate_upwards(dead, verbose, processed)
             self.population[j] = ind
-        # propagate_upwards_from(deadmen, verbose, self.sequence_length)
-        # print("A = ", deadmen)
-        # deadmen = sorted(deadmen, key=lambda x: x.time)
-        # print("B = ", deadmen)
-        # dead_parents = []
-        # dcopy = [i for i in deadmen]
-        # while len(dcopy) > 0:
-        #     i = dcopy.pop()
-        #     for p in i.parents:
-        #         if p not in dead_parents and p not in dcopy:
-        #             # print(i, "->", p)
-        #             dead_parents.append(p)
-        # print("C = ", dead_parents)
-        # for p in deadmen:
-        #     assert p not in dead_parents
-        # dcopy = sorted([i for i in dead_parents], key=lambda x: x.time)
-        # dead_grandparents = []
-        # while len(dcopy) > 0:
-        #     i = dcopy.pop()
-        #     for p in i.parents:
-        #         if p not in dead_grandparents and p not in dcopy:
-        #             dead_grandparents.append(p)
-        # for i in dead_grandparents:
-        #     assert i not in dead_parents
-
         processed = set()
         nrepeats_per_birth = 0
-        # births = []
         for _, ind in replacements:
-            if verbose is True:
-                print(f"propagating birth {ind}")
             to_process.append(IndividualToProcess(ind, IndividualType.BIRTH))
-            # nrepeats_per_birth += propagate_upwards(ind, verbose, processed)
 
         visits = propagate_upwards(to_process, verbose, self.sequence_length)
         print(visits)
-        # print(
-        #     nrepeats_per_death / len(replacements),
-        #     nrepeats_per_birth / len(replacements),
-        # )
         self.check_state()
 
     def check_state(self):
@@ -690,30 +574,12 @@ class Simulator(object):
                 assert_non_overlapping(ind.ancestry)
                 for a in ind.ancestry:
                     if a.child is not ind and a.child not in reachable:
-                        # NOTE: these unary nodes are necessary for mutation simplificaton,
-                        # "tskit-style". But they do not contribute to the ancestry of
-                        # the alive nodes, so we skip printing a warning for them.
-                        # Based on running with -v, these arise when an alive node is removed
-                        # from a parent's children but is retained in the ancestry as a unary edge.
-                        # This updating removes the ancestor from the alive node's parents set.
-                        # Things get "cleaned up" later, the next time simplification works
-                        # its way up to the parent node.
-                        # This can also happen when the descendant node is alive and present
-                        # only in the input ancestry of a parent as a unary edge.  The current
-                        # approach maintains this unary status, and it is also eventually cleaned up
-                        # by the filter call in the simplification loop.
-                        # NOTE: attempts to do things like remove unary edges at the end of simplification leads to
-                        # incorrect topologies at the end...
-                        # TODO: is there a better way?
                         if a.child.is_alive or len(a.child.children) > 0:
                             print(
                                 "UNREACHABLE UNARY", ind, "->", a.child, a.child.parents
                             )
             for child, segments in ind.children.items():
                 if child is not ind:
-                    if child not in reachable:
-                        print("BAD BAD BAD")
-                        child.print_state()
                     assert ind in child.parents
                     sys.stdout.flush()
                     assert (
@@ -735,27 +601,11 @@ class Simulator(object):
         for _ in range(num_generations):
             self.run_generation(verbose)
 
-        # for i in self.population:
-        #     if i.is_alive:
-        #         a = i in [t.parent for t in self.transmissions]
-        #         b = i in [t.child for t in self.transmissions]
-        #         if not a and not b:
-        #             self.leftover_alive.append(i)
-
     def make_samples_list_for_tskit(self, node_map) -> List[int]:
         rv = []
         for i in self.population:
             if i.is_alive and node_map[i.index] not in rv:
                 rv.append(node_map[i.index])
-        return sorted(rv)
-        # for i in self.transmissions:
-        #     for j in [i.parent, i.child]:
-        #         if j.is_alive and node_map[j.index] not in rv:
-        #             rv.append(node_map[j.index])
-        # for i in self.leftover_alive:
-        #     assert i.is_alive
-        #     assert node_map[i.index] not in rv
-        #     rv.append(node_map[i.index])
         return sorted(rv)
 
     def get_alive_node_indexes_and_times(self) -> List[Tuple[int, int]]:
@@ -765,17 +615,6 @@ class Simulator(object):
             if i.is_alive and i.index not in indexes:
                 rv.append((i.index, i.time))
                 indexes.add(i.index)
-        # for i in self.transmissions:
-        #     for j in [i.parent, i.child]:
-        #         if j.is_alive and j.index not in indexes:
-        #             rv.append((j.index, j.time))
-        #             indexes.add(j.index)
-
-        # for i in self.leftover_alive:
-        #     assert i.index not in indexes
-        #     rv.append((i.index, i.time))
-        #     indexes.add(i.index)
-
         return rv
 
     def convert_transmissions_to_tables(
@@ -845,14 +684,6 @@ class Simulator(object):
         # Map the individuals to their indexes to make debug easier.
         # THIS IS A TERRIBLE IDEA!!!
         sorted_individuals = sorted(self.all_reachable(), key=lambda x: x.index)
-        # sorted_individuals = [
-        #     i
-        #     for i in filter(
-        #         lambda x: x.is_alive is False
-        #         or (len(x.parents) > 0 or len(x.children) > 0),
-        #         sorted_individuals,
-        #     )
-        # ]
         next_ind = 0
         for ind in sorted_individuals:
             while ind.index != next_ind:
@@ -885,16 +716,11 @@ def main():
     parser = make_parser()
     args = parser.parse_args(sys.argv[1:])
     validate_args(args)
-    # sim = Simulator(100, 5, death_proba=1.0, seed=seed)
-    # sim = Simulator(6, 5, death_proba=1.0, seed=seed)
     sim = Simulator(
         args.N, args.genome_length, death_proba=args.death_probability, seed=args.seed
     )
-    # works for 1 generation...
-    # sim.run(1)
     sim.run(args.simlen, args.verbose)
     ts = sim.export()
-    # print(ts.draw_text())
 
     topologies = make_topologies(ts)
 
@@ -911,7 +737,6 @@ def main():
     for i, j in enumerate(idmap):
         if j != tskit.NULL:
             node_labels[j] = node_map[i]
-    # print(ts_tsk.draw_text(node_labels={i: str(j) for i, j in node_labels.items()}))
 
     tsk_topologies = make_topologies(ts_tsk, node_labels)
 
@@ -926,342 +751,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-def test_remove_self_mapping():
-    L = 5
-    child = Individual(0, 0, is_alive=True)
-    child.ancestry = [Segment(0, L, child)]
-    assert len(child.ancestry) == 1
-    child.remove_sample_mapping(L)
-    assert len(child.ancestry) == 0
-
-
-def test_basics():
-    """
-    Simple case, easy to reason through.
-    """
-    pop = []
-    L = 5
-    for i in range(2):
-        parent = Individual(0, i, is_alive=False)
-        assert parent.index == i
-        pop.append(parent)
-
-    # transmission w/coalescence
-    c = Individual(1, len(pop), True)
-    c.ancestry.append(Segment(0, L, c))
-    record_inheritance(0, L // 2, pop[0], c)
-    cc = Individual(1, len(pop) + 1, True)
-    cc.ancestry.append(Segment(0, L, cc))
-    record_inheritance(L // 3, 3 * L // 4, pop[0], cc)
-
-    # 2x unary edges
-    record_inheritance(0, L // 3, pop[1], cc)
-    record_inheritance(3 * L // 4, L, pop[1], cc)
-
-    assert pop[0] in c.parents
-    assert pop[1] not in c.parents
-    assert pop[0] in cc.parents
-    assert pop[1] in cc.parents
-
-    e = pop[0].intersecting_ancestry()
-    assert len(e) == 2
-
-    propagate_upwards(pop[0], False)
-
-    assert len(pop[0].ancestry) == 3
-    assert Segment(0, 1, c) in pop[0].ancestry
-    assert Segment(1, 2, pop[0]) in pop[0].ancestry
-    assert Segment(2, 3, cc) in pop[0].ancestry
-
-    propagate_upwards(pop[1], False)
-    assert len(pop[1].ancestry) == 2
-    assert Segment(0, L // 3, cc) in pop[1].ancestry
-    assert Segment(3 * L // 4, L, cc) in pop[1].ancestry
-
-    propagate_upwards(c, False)
-    propagate_upwards(cc, False)
-
-    assert len(pop[0].ancestry) == 3
-    assert Segment(0, 1, c) in pop[0].ancestry
-    assert Segment(1, 2, pop[0]) in pop[0].ancestry
-    assert Segment(2, 3, cc) in pop[0].ancestry
-
-    assert len(pop[1].ancestry) == 2
-    assert Segment(0, L // 3, cc) in pop[1].ancestry
-    assert Segment(3 * L // 4, L, cc) in pop[1].ancestry
-
-
-def failing_case_1():
-    # seed = 1, N=4, L=5, using basically Jerome's prototype
-    pop = []
-    L = 5
-    for i in range(4):
-        parent = Individual(0, i, is_alive=False)
-        assert parent.index == i
-        pop.append(parent)
-
-    next_index = len(pop)
-
-    replacements = []
-    x = [1, 4, 1, 1]  # xover positions
-    parents = [(0, 2), (3, 3), (0, 3), (3, 3)]
-    for i in range(4):
-        child = Individual(1, next_index)
-        next_index += 1
-        child.ancestry.append(Segment(0, L, child))
-        record_inheritance(0, x[i], pop[parents[i][0]], child)
-        record_inheritance(x[i], L, pop[parents[i][1]], child)
-        replacements.append((i, child))
-    for j, ind in replacements:
-        dead = pop[j]
-        dead.is_alive = False
-        # NOTE: EXPERIMENTAL
-        dead.remove_sample_mapping(sequence_length=L)
-        propagate_upwards(dead, False)
-        pop[j] = ind
-
-    for _, ind in replacements:
-        # print("replacement")
-        # ind.print_state()
-        propagate_upwards(ind, False)
-
-    return pop
-
-
-def failing_case_2():
-    # seed = 2, N=4, L=5, using basically Jerome's prototype
-    pop = []
-    L = 5
-    for i in range(4):
-        parent = Individual(0, i, is_alive=False)
-        assert parent.index == i
-        pop.append(parent)
-    next_index = len(pop)
-
-    replacements = []
-    x = [1, 3, 4, 3]  # xover positions
-    parents = [(0, 0), (1, 2), (0, 1), (2, 3)]
-    for i in range(4):
-        child = Individual(1, next_index)
-        next_index += 1
-        child.ancestry.append(Segment(0, L, child))
-        record_inheritance(0, x[i], pop[parents[i][0]], child)
-        record_inheritance(x[i], L, pop[parents[i][1]], child)
-        replacements.append((i, child))
-    for j, ind in replacements:
-        dead = pop[j]
-        dead.is_alive = False
-        # NOTE: EXPERIMENTAL
-        dead.remove_sample_mapping(sequence_length=L)
-        propagate_upwards(dead, False)
-        pop[j] = ind
-
-    for _, ind in replacements:
-        # print("replacement")
-        # ind.print_state()
-        propagate_upwards(ind, False)
-
-    return pop
-
-
-def collect_unique_individuals(pop):
-    individuals = set()
-    for i in pop:
-        stack = [i]
-        while len(stack) > 0:
-            j = stack.pop()
-            individuals.add(j)
-            for p in j.parents:
-                stack.append(p)
-    return individuals
-
-
-def test_failing_case_1():
-    pop = failing_case_1()
-    individuals = collect_unique_individuals(pop)
-
-    parent_indexes = [(), (), (), (), (0,), (3,), (3, 0), (3,)]
-
-    for i in individuals:
-        assert len(i.parents) == len(parent_indexes[i.index]), f"{i} -> {i.parents}"
-        for p in i.parents:
-            assert p.index in parent_indexes[i.index]
-
-    for i in individuals:
-        if i.index > 3:
-            assert i.is_alive
-            assert len(i.ancestry) == 1
-        else:
-            assert not i.is_alive
-
-            assert i.index != 1
-            assert i.index != 2
-
-            if i.index == 0:
-                assert len(i.ancestry) == 1
-                assert i.ancestry[0].child is i
-                assert i.ancestry[0].left == 0
-                assert i.ancestry[0].right == 1
-
-                found4 = False
-                found6 = False
-                for child, segments in i.children.items():
-                    if child.index == 4:
-                        assert Segment(0, 1, None) in segments
-                        found4 = True
-                    elif child.index == 6:
-                        assert Segment(0, 1, None) in segments
-                        found6 = True
-                    elif child.index == i.index:
-                        pass
-                    else:
-                        assert False, f"{child}"
-
-                assert found4 is True
-                assert found6 is True
-
-            if i.index == 3:
-                i.print_state()
-                assert len(i.ancestry) == 3
-                segs = [(0, 1), (1, 4), (4, 5)]
-                for a, s in zip(i.ancestry, segs):
-                    assert a.left == s[0]
-                    assert a.right == s[1]
-                    assert a.child is i
-
-                found5 = False
-                found6 = False
-                found7 = False
-                for child, segments in i.children.items():
-                    if child.index == 5:
-                        assert Segment(0, 1, None) in segments
-                        assert Segment(1, 4, None) in segments
-                        assert Segment(4, 5, None) in segments
-                        found5 = True
-                    elif child.index == 7:
-                        assert Segment(0, 1, None) in segments
-                        assert Segment(1, 4, None) in segments
-                        assert Segment(4, 5, None) in segments
-                        found7 = True
-                    elif child.index == 6:
-                        assert Segment(1, 4, None) in segments
-                        assert Segment(4, 5, None) in segments
-                        found6 = True
-                    elif child.index == i.index:
-                        pass
-                    else:
-                        pass
-                        assert False, f"{child}"
-
-                assert found5 is True, "A"
-                assert found6 is True, "B"
-                assert found7 is True, "C"
-
-
-def test_failing_case_2():
-    pop = failing_case_2()
-    individuals = collect_unique_individuals(pop)
-
-    parent_indexes = [(), (), (), (), (0,), (), (0,), ()]
-
-    # for i in individuals:
-    #     if i.index == 0:
-    #         i.print_state()
-    #     print("CHILDREN")
-    #     for j in i.children:
-    #         j.print_state()
-
-    for i in individuals:
-        assert len(i.parents) == len(parent_indexes[i.index]), f"{i} -> {i.parents}"
-        for p in i.parents:
-            assert p.index in parent_indexes[i.index]
-
-
-def test_failing_case_2_subtree():
-    """
-    The "problem" involves node 0 and its 2 offspring.
-
-    This test only records inheritances from 0 to the 2 offspring.
-    """
-    pop = []
-    L = 5
-    for i in range(4):
-        parent = Individual(0, i, is_alive=False)
-        assert parent.index == i
-        pop.append(parent)
-
-    next_index = len(pop)
-
-    replacements = []
-    x = [1, 3, 4, 3]  # xover positions
-    parents = [(0, 0), (1, 2), (0, 1), (2, 3)]
-    for i in range(4):
-        child = Individual(1, next_index)
-        next_index += 1
-        child.ancestry.append(Segment(0, L, child))
-        p1 = False
-        p2 = False
-        if parents[i][0] == 0 or parents[i][0] == 1:
-            p1 = True
-        if parents[i][1] == 0 or parents[i][1] == 1:
-            p2 = True
-        if parents[i][0] == 0 or parents[i][1] == 0:
-            record_inheritance(0, x[i], pop[parents[i][0]], child)
-            record_inheritance(x[i], L, pop[parents[i][1]], child)
-        replacements.append((i, child))
-
-    print("propagate deaths")
-    for j, ind in replacements:
-        dead = pop[j]
-        dead.is_alive = False
-        # NOTE: EXPERIMENTAL
-        dead.remove_sample_mapping(sequence_length=L)
-        propagate_upwards(dead, False)
-        pop[j] = ind
-
-    print("propagate replacements")
-    for _, ind in replacements:
-        # print("replacement")
-        # ind.print_state()
-        propagate_upwards(ind, False)
-
-    individuals = collect_unique_individuals(pop)
-
-    parent_indexes = [(), (), (), (), (0,), (), (0,), ()]
-
-    for i in individuals:
-        assert len(i.parents) == len(parent_indexes[i.index]), f"{i} -> {i.parents}"
-        for p in i.parents:
-            assert p.index in parent_indexes[i.index]
-
-
-def test_failing_case_1_next_generation():
-    L = 5
-    pop = failing_case_1()
-
-    next_index = max([i.index for i in collect_unique_individuals(pop)]) + 1
-
-    replacements = []
-    x = [1, 1, 2, 4]  # xover positions
-    parents = [(2, 1), (0, 0), (0, 3), (0, 1)]
-    for i in range(4):
-        child = Individual(2, next_index)
-        next_index += 1
-        child.ancestry.append(Segment(0, L, child))
-        record_inheritance(0, x[i], pop[parents[i][0]], child)
-        record_inheritance(x[i], L, pop[parents[i][1]], child)
-        replacements.append((i, child))
-    for j, ind in replacements:
-        dead = pop[j]
-        dead.is_alive = False
-        # NOTE: EXPERIMENTAL
-        dead.remove_sample_mapping(sequence_length=L)
-        propagate_upwards(dead, False)
-        pop[j] = ind
-
-    for _, ind in replacements:
-        # print("replacement")
-        # ind.print_state()
-        propagate_upwards(ind, False)
