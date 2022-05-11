@@ -165,22 +165,19 @@ def overlapping_segments(segments):
             yield left, right, X
 
 
-def propagate_upwards_from(individuals, verbose, sequence_length):
+def propagate_upwards(individuals, verbose, sequence_length):
     heapq.heapify(individuals)
     current_ind = set([i.individual for i in individuals])
     last_time = None
     processed = set()
 
-    # print("STARTING PROPAGATION")
     visits = 0
 
     while len(individuals) > 0:
         assert len(individuals) == len(current_ind)
-        # print(f"XX = {individuals}")
         ind = heapq.heappop(individuals)
         visits += 1
         current_ind.remove(ind.individual)
-        # print(f"{ind}")
         if last_time is not None:
             assert (
                 ind.individual.time <= last_time
@@ -189,111 +186,24 @@ def propagate_upwards_from(individuals, verbose, sequence_length):
         else:
             last_time = ind.individual.time
         assert ind.individual not in processed, f"{ind.individual}"
-        # print(f"updating {ind.individual}")
-        # print("BEFORE:")
-        # ind.individual.print_state()
         processed.add(ind.individual)
 
         if ind.type == IndividualType.DEATH:
-            # print("TOKILL")
             ind.individual.is_alive = False
             ind.individual.remove_sample_mapping(sequence_length=sequence_length)
 
-        # NOTE:
-        # the commmand -s 5 -d 1 seem useful.
-        # That commant drops a single bit of
-        # ancestry out, giving the wrong topo
-        # at the end
-        # if ind.individual.index == 31:
-        #     # print("BEFORE")
-        #     ind.individual.print_state()
-        # print("The children:")
-        # for c in ind.individual.children:
-        #     c.print_state()
-
-        # print(f"before: {ind.individual.ancestry}")
         changed = ind.individual.update_ancestry(verbose)
-        # print("after", ind.individual.ancestry)
-        # NOTE:
-        # the commmand -s 5 -d 1 seem useful.
-        # That commant drops a single bit of
-        # ancestry out, giving the wrong topo
-        # at the end
-        # if ind.individual.index == 31:
-        #     print("AFTER")
-        #     ind.individual.print_state()
-        # print("The children:")
-        # for c in ind.individual.children:
-        #     c.print_state()
-        # print("AFTER:")
-        # ind.individual.print_state()
         if changed or ind.individual.is_alive:
             for parent in ind.individual.parents:
-                # print(f"parent = {parent}")
-                # NOTE: naively adding all parents to
-                # the stack results in double-processing some
-                # parents b/c we often process > 1 child node
-                # before getting to the parent, causing a big
-                # performance loss.
                 if parent not in current_ind:
                     assert parent.time < ind.individual.time
                     if last_time is not None:
                         assert parent.time < last_time, f"{parent.time}, {last_time}"
-                    # stack.append(parent)
                     heapq.heappush(
                         individuals, IndividualToProcess(parent, IndividualType.PARENT)
                     )
                     current_ind.add(parent)
-                    # print(f"XX adding parent = {parent}")
-                # else:
-                #     print(f"not adding parent = {parent}")
     return visits
-
-def propagate_upwards(ind, verbose, processed):
-    # NOTE: using heapq here and defining _lt__
-    # such that individual is sorted by time (present to past)
-    # greatly cuts the workload here ON TOP OF what is
-    # accomplished by not double-entering nodes into the stack
-    # (see NOTE below).
-    # This isn't working.
-    # print("PROPAGATE", ind)
-    stack = [ind]
-    repeats = 0
-    while len(stack) > 0:
-        # ind = stack.pop()
-        ind = heapq.heappop(stack)
-
-        if ind in processed:
-            repeats += 1
-        else:
-            processed.add(ind)
-
-        if verbose is True:
-            print("VISIT")
-        # print("\t", ind)
-        # ind.print_state()
-        # We're visting everything here at the moment, but we don't need to.
-        # We should only have to visit the parents for which we have ancestral
-        # segents, and so the areas of the graph we traverse should be
-        # quickly localised.
-        # print("before")
-        # ind.print_state()
-        # print(f"updating {ind}")
-        changed = ind.update_ancestry(verbose)
-        # print("after")
-        # ind.print_state()
-        if changed or ind.is_alive:
-            for parent in ind.parents:
-                # NOTE: naively adding all parents to
-                # the stack results in double-processing some
-                # parents b/c we often process > 1 child node
-                # before getting to the parent, causing a big
-                # performance loss.
-                if parent not in stack:
-                    assert parent.time < ind.time
-                    # stack.append(parent)
-                    heapq.heappush(stack, parent)
-    return repeats
 
 
 def record_inheritance(left, right, parent, child):
@@ -759,7 +669,7 @@ class Simulator(object):
             to_process.append(IndividualToProcess(ind, IndividualType.BIRTH))
             # nrepeats_per_birth += propagate_upwards(ind, verbose, processed)
 
-        visits = propagate_upwards_from(to_process, verbose, self.sequence_length)
+        visits = propagate_upwards(to_process, verbose, self.sequence_length)
         print(visits)
         # print(
         #     nrepeats_per_death / len(replacements),
