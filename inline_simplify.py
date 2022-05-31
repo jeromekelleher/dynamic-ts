@@ -263,6 +263,12 @@ class ChildInputDetails:
     output_number_segs: int
 
 
+@dataclass
+class Keep:
+    seg: Segment
+    keep: bool
+
+
 class Individual(object):
     """
     Class representing a single individual that was alive at some time.
@@ -386,10 +392,20 @@ class Individual(object):
 
         ancestry_change_detected = False
 
+        test_ancestry = [
+            Keep((i.left, i.right, i.child.index), False) for i in self.ancestry
+        ]
+        test_ancestry_index = 0
+        test_ancestry_len = len(test_ancestry)
+
+        assert input_ancestry_len == test_ancestry_len
+
         for k in self.children.keys():
             k.parents.remove(self)
 
         self.children.clear()
+
+        print("start")
 
         for left, right, X in overlapping_segments(S):
             assert right > left
@@ -423,6 +439,31 @@ class Individual(object):
             # If an individual is alive it always has ancestry over the
             # full segment, so we don't overwrite this.
             if not self.is_alive:
+                while (
+                    test_ancestry_index < test_ancestry_len
+                    and test_ancestry[test_ancestry_index].seg[0] < left
+                ):
+                    test_ancestry_index += 1
+                if test_ancestry_index < test_ancestry_len:
+                    tseg = test_ancestry[test_ancestry_index].seg
+                    print(tseg, test_ancestry_index, left, right)
+                    if tseg[1] > left and right > tseg[0]:
+                        print("overlap!", test_ancestry[test_ancestry_index])
+                        test_ancestry[test_ancestry_index] = Keep(
+                            (
+                                left,
+                                right,
+                                mapped_ind.index,
+                            ),
+                            True,
+                        )
+                        # print("overlap done", test_ancestry[test_ancestry_index])
+                    else:
+                        print("no overlap!", test_ancestry[test_ancestry_index])
+                    #     break
+                else:
+                    test_ancestry.append(Keep((left, right, mapped_ind.index), True))
+                    test_ancestry_index += 1
                 seg = Segment(left, right, mapped_ind)
                 if output_ancestry_index < input_ancestry_len:
                     if self.ancestry[output_ancestry_index] != seg:
@@ -437,6 +478,15 @@ class Individual(object):
             if output_ancestry_index < input_ancestry_len:
                 ancestry_change_detected = True
                 del self.ancestry[output_ancestry_index:]
+
+        # print("what up", test_ancestry)
+        if ancestry_change_detected is True:
+            check = [i.seg for i in test_ancestry if i.keep is True]
+            acheck = [(i.left, i.right, i.child.index) for i in self.ancestry]
+            print(check, "->", self.ancestry)
+            assert (
+                check == acheck
+            ), f"{check} != {self.ancestry} | {test_ancestry}, {self}"
 
         assert_non_overlapping(self.ancestry)
 
